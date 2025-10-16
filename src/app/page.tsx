@@ -677,6 +677,14 @@ const UASChecklistApp: React.FC = () => {
       return;
     }
 
+    // Flatten subValues into completed
+    const flattenedCompleted: { [key: string]: boolean | string } = { ...completed };
+    Object.entries(subValues).forEach(([itemId, subFields]) => {
+      Object.entries(subFields).forEach(([subId, value]) => {
+        flattenedCompleted[`${itemId}_${subId}`] = value;
+      });
+    });
+
     const missionLog: MissionLog = {
       missionNumber,
       timestamp: new Date().toISOString(),
@@ -685,7 +693,7 @@ const UASChecklistApp: React.FC = () => {
       aircraftType,
       rpCert,
       profileId: selectedProfileId,
-      completed: { ...completed, ...subValues },
+      completed: flattenedCompleted,
       weather,
       flightRecords,
     };

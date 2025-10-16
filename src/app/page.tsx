@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState, useEffect, useMemo } from 'react';
+import { Analytics } from "@vercel/analytics/next"
 
 // --- TYPE DEFINITIONS ---
 interface ChecklistSection {
@@ -797,6 +798,7 @@ const UASChecklistApp: React.FC = () => {
       <div className="max-w-5xl mx-auto">
         {/* Header */}
         <header className="mb-8 text-center">
+          <Analytics />
           <h1 className="text-4xl font-extrabold text-gray-900">
             UAS <span className="text-sky-600">Pre-Flight Checklist</span>
           </h1>

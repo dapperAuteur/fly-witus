@@ -180,7 +180,7 @@ const RoadmapComponent: React.FC = () => {
         {/* Call to Action */}
         <div className="bg-gradient-to-r from-sky-500 to-blue-600 rounded-2xl shadow-xl p-8 mt-8 text-center text-white">
           <h2 className="text-3xl font-bold mb-3">Want to Contribute?</h2>
-          <p className="text-lg mb-6">Help us build the future of UAS pre-flight checklists.</p>
+          <p className="text-lg mb-6">Help US build the future of UAS pre-flight checklists.</p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link 
               href="https://i.witus.online/fly-witus-contributing"

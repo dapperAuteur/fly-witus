@@ -12,13 +12,13 @@ interface ChecklistSection {
   items: ChecklistItem[];
 }
 
-interface ChecklistItem {
-  id: string;
-  label: string;
-  type: 'checkbox' | 'text' | 'weather';
-  required?: boolean;
-  subfields?: { id: string; label: string; type: 'text' | 'number' }[];
-}
+// interface ChecklistItem {
+//   id: string;
+//   label: string;
+//   type: 'checkbox' | 'text' | 'weather';
+//   required?: boolean;
+//   subfields?: { id: string; label: string; type: 'text' | 'number' }[];
+// }
 
 interface AircraftProfile {
   id: string;

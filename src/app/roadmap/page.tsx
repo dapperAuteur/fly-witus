@@ -183,13 +183,13 @@ const RoadmapComponent: React.FC = () => {
           <p className="text-lg mb-6">Help us build the future of UAS pre-flight checklists.</p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link 
-              href="https://github.com/dapperAuteur/fly-witus/blob/main/CONTRIBUTING.md"
+              href="https://i.witus.online/fly-witus-contributing"
               className="px-6 py-3 bg-white text-sky-600 rounded-lg font-bold hover:bg-gray-100 transition"
             >
               Contributor Guidelines
             </Link>
             <Link 
-              href="https://github.com/dapperAuteur/fly-witus/issues"
+              href="https://i.witus.online/fly-witus-issues-tracker"
               className="px-6 py-3 bg-sky-700 text-white rounded-lg font-bold hover:bg-sky-800 transition"
             >
               Report Issues

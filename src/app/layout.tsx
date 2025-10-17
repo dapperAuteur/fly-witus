@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Fly WitUS",
+  title: "Fly WitUS by BAM",
   description: "UAS Pre-Flight Checklist and Post-Flight Log App. Export Your Flight Data to PDF or JSON.",
 };
 

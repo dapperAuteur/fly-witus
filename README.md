@@ -1,36 +1,157 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# UAS Pre-Flight Checklist System
 
-## Getting Started
+**Fly Wit Us** - Professional drone flight checklist and logging system for FAA Part 107 compliance.
 
-First, run the development server:
+![Fly Wit Us Logo](https://res.cloudinary.com/devdash54321/image/upload/v1760659304/logos/flywitus-platypus-logo.png)
 
+## Overview
+
+A comprehensive, offline-first web application for UAS (Unmanned Aircraft System) pilots to complete pre-flight checklists, log missions, and maintain FAA-compliant flight records.
+
+## Features
+
+### Current (MVP v2.0)
+
+- ✅ **Auto-Save** - Real-time persistence, never lose progress
+- ✅ **Complete Pre-Flight Checklist** - 8 sections, 50+ items based on FAA Part 107
+- ✅ **Weather Logging** - Manual entry + NOAA API auto-fetch
+- ✅ **Battery Tracking** - Log up to 4 battery voltages per mission
+- ✅ **Flight Log** - Record multiple flights per mission with timestamps
+- ✅ **Aircraft Profiles** - Save and quick-load aircraft configurations
+- ✅ **Mission History** - View past 10 missions with search
+- ✅ **Export Options** - JSON backup + FAA-compliant PDF/TXT
+- ✅ **Progress Tracking** - Visual progress bar for required items
+- ✅ **Offline-First** - Works without internet, syncs when available
+
+### Tech Stack
+
+- React 18 + TypeScript
+- Tailwind CSS
+- Browser localStorage (offline persistence)
+- NOAA Weather API integration
+
+## Installation
+
+### Option 1: Run Locally
 ```bash
+# Clone repository
+git clone https://github.com/dapperAuteur/fly-witus.git
+cd fly-witus
+
+# Install dependencies
+npm install
+
+# Start development server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Option 2: Deploy to Vercel/Netlify
+```bash
+# Build for production
+npm run build
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+# Deploy (example for Vercel)
+vercel deploy
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Usage
 
-## Learn More
+### Pre-Flight Workflow
 
-To learn more about Next.js, take a look at the following resources:
+1. **Load Aircraft Profile** (optional)
+   - Click "Aircraft Profiles" → Select saved aircraft
+   - Auto-fills type and certificate number
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+2. **Fill Mission Info**
+   - Pilot name, location, aircraft type
+   - Click "Auto-Fetch Weather" for live conditions
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+3. **Complete Checklist**
+   - Progress bar shows completion percentage
+   - Red asterisks (*) mark required items
+   - Battery voltages auto-expand when checked
 
-## Deploy on Vercel
+4. **Log Flights**
+   - Click "+ Add Flight" after each flight
+   - Record takeoff/landing times, locations, notes
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+5. **Save Mission**
+   - Button unlocks at 100% completion
+   - Automatically saved to browser storage
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+6. **Export Records**
+   - View Mission History → Export PDF (FAA compliance)
+   - Export JSON for backup/cloud storage
+
+## Data Storage
+
+All data stored in browser localStorage:
+- `uas_missions` - Completed missions
+- `uas_aircraft_profiles` - Saved aircraft
+- `uas_current_mission` - Auto-save draft
+
+**Backup Strategy**: Export JSON weekly, upload to Google Drive/Dropbox.
+
+## Configuration
+
+### Logo Customization
+Update logo URL in component:
+```typescript
+// Header logo: 80x80px
+<img src="https://fly.witus.online/logo.png" alt="Your Company" className="h-16 w-auto" />
+
+// Footer logo: 60x60px  
+<img src="https://fly.witus.online/logo.png" alt="Your Company" className="h-12 w-auto" />
+```
+
+### Weather API
+Uses NOAA's free API (no key required):
+- Requires GPS location access
+- Falls back to manual entry if unavailable
+
+## Browser Support
+
+- Chrome 90+
+- Firefox 88+
+- Safari 14+
+- Edge 90+
+
+**Note**: localStorage required. Private/Incognito mode may limit functionality.
+
+## FAA Compliance
+
+This system helps meet 14 CFR Part 107 requirements:
+- Pre-flight inspection documentation
+- Weather condition logging
+- Flight time records
+- Equipment condition tracking
+
+**Legal Note**: Export PDFs for official logbook. Consult with aviation attorney for specific compliance needs.
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
+## Roadmap
+
+See [ROADMAP.md](https://i.witus.online/fly-witus-dev-roadmap) for planned features.
+
+## License
+
+MIT License - See [LICENSE](LICENSE) for details.
+
+## Support
+
+- **Website**: https://fly.witus.online
+- **Issues**: https://github.com/dapperAuteur/fly-witus/issues
+- **Email**: support@witus.online
+
+## Acknowledgments
+
+- Checklist based on FAA Part 107 regulations
+- Weather data from National Weather Service API
+- Icon design by Fly Wit Us team
+
+---
+
+**Fly Wit Us** - Safe Flying Through Better Planning

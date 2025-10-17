@@ -130,7 +130,7 @@ This system helps meet 14 CFR Part 107 requirements:
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+See [CONTRIBUTING.md](https://i.witus.online/fly-witus-contributing) for guidelines.
 
 ## Roadmap
 
@@ -142,8 +142,8 @@ MIT License - See [LICENSE](LICENSE) for details.
 
 ## Support
 
-- **Website**: https://fly.witus.online
-- **Issues**: https://github.com/dapperAuteur/fly-witus/issues
+- **Website**: [Fly Wit US](https://i.witus.online/fly-witus-dev-roadmap)
+- **Issues**: [Issues](https://i.witus.online/fly-witus-issues-tracker)
 - **Email**: support@witus.online
 
 ## Acknowledgments

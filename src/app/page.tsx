@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Analytics } from "@vercel/analytics/next"
 import Image from 'next/image';
+import Link from 'next/link';
 // import { CldImage } from 'next-cloudinary'; Get Cloudinary Component to work.
 
 // --- TYPE DEFINITIONS ---
@@ -1024,6 +1025,7 @@ const UASChecklistApp: React.FC = () => {
             {showHistory ? 'Hide History' : 'View Mission History'}
           </button>
         </div>
+        
 
         {/* Mission History */}
         {showHistory && (
@@ -1083,6 +1085,12 @@ const UASChecklistApp: React.FC = () => {
         {/* Footer */}
         <footer className="text-center text-sm text-gray-500 py-6 border-t">
           <div className="flex items-center justify-center gap-3 mb-2">
+          <Link 
+            href="/roadmap" 
+            className="px-4 py-2 bg-sky-600 text-white rounded-lg hover:bg-sky-700"
+          >
+            View Roadmap
+          </Link>
             <Image
               width={80}
               height={80}

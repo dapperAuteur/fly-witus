@@ -46,7 +46,11 @@ export const users = pgTable(
     cashappActivatedBy: text("cashapp_activated_by"),
     cashappRejectionReason: text("cashapp_rejection_reason"),
 
-    // v3 §4: promo tracking. No FK yet — promos table lands in feat/track-e-promo-system.
+    // v3 §4: promo tracking. Stored as a bare text column rather than a
+    // FK to keep auth.ts ↔ commerce.ts free of circular imports
+    // (commerce.ts already imports users for promos.createdBy). Referential
+    // integrity is enforced at the application layer where it matters
+    // (checkout / promo redemption code paths).
     appliedPromoId: text("applied_promo_id"),
 
     // v3 §5: admin gate. Set true for ADMIN_EMAIL on first sign-in (see feat/track-e-better-auth-and-login).

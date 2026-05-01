@@ -23,6 +23,12 @@ export interface FlightRecord {
   notes: string;
 }
 
+export interface Photo {
+  url: string;        // Cloudinary URL (or any https image URL)
+  caption?: string;
+  uploadedAt?: string;
+}
+
 export interface MissionPdfInput {
   missionNumber: string;
   timestamp: string;
@@ -42,6 +48,7 @@ export interface MissionPdfInput {
   // Optional v3-spec fields. Render only when present so the generator
   // stays useful before the UI captures them.
   laancAuthorizationNumber?: string;
+  photos?: Photo[];
 }
 
 const PAGE_WIDTH = 612; // Letter, points
@@ -242,6 +249,102 @@ function drawSignatureBlock(doc: jsPDF, cursor: Cursor) {
   doc.line(MARGIN + 350, cursor.y, PAGE_WIDTH - MARGIN, cursor.y);
 }
 
+// Detect image format from a fetched blob's MIME type. jsPDF's addImage
+// expects the format string ("JPEG", "PNG", "WEBP"). HEIC isn't supported
+// by jsPDF — Cloudinary auto-converts on upload but we still guard.
+function jsPdfFormatFor(mime: string): "JPEG" | "PNG" | "WEBP" | null {
+  if (mime.includes("jpeg") || mime.includes("jpg")) return "JPEG";
+  if (mime.includes("png")) return "PNG";
+  if (mime.includes("webp")) return "WEBP";
+  return null;
+}
+
+async function blobToDataUrl(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(blob);
+  });
+}
+
+interface FetchedPhoto {
+  caption?: string;
+  dataUrl: string;
+  format: "JPEG" | "PNG" | "WEBP";
+  // Native pixel dimensions of the source image, used to preserve aspect ratio.
+  pxWidth: number;
+  pxHeight: number;
+}
+
+async function fetchPhoto(p: Photo): Promise<FetchedPhoto | null> {
+  try {
+    const res = await fetch(p.url, { signal: AbortSignal.timeout(10_000) });
+    if (!res.ok) return null;
+    const blob = await res.blob();
+    const format = jsPdfFormatFor(blob.type);
+    if (!format) return null;
+    const dataUrl = await blobToDataUrl(blob);
+    const dims = await readImageDimensions(dataUrl);
+    if (!dims) return null;
+    return { caption: p.caption, dataUrl, format, pxWidth: dims.w, pxHeight: dims.h };
+  } catch {
+    return null;
+  }
+}
+
+function readImageDimensions(dataUrl: string): Promise<{ w: number; h: number } | null> {
+  // We use the DOM Image API in the browser. Server-side rendering would
+  // need a different path (e.g. an image-size lib) — but the PDF generator
+  // only runs in the browser since downloadMissionPdf calls doc.save().
+  if (typeof window === "undefined") return Promise.resolve(null);
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => resolve({ w: img.naturalWidth, h: img.naturalHeight });
+    img.onerror = () => resolve(null);
+    img.src = dataUrl;
+  });
+}
+
+function drawPhoto(doc: jsPDF, cursor: Cursor, photo: FetchedPhoto) {
+  // Cap photo at 400pt wide; preserve aspect ratio.
+  const maxWidth = Math.min(400, CONTENT_WIDTH - 16);
+  const aspectRatio = photo.pxHeight / photo.pxWidth;
+  const drawWidth = maxWidth;
+  const drawHeight = Math.min(420, drawWidth * aspectRatio);
+  const captionHeight = photo.caption ? 14 : 0;
+  const totalHeight = drawHeight + captionHeight + 10;
+
+  ensureSpace(doc, cursor, totalHeight);
+
+  doc.addImage(photo.dataUrl, photo.format, MARGIN + 8, cursor.y, drawWidth, drawHeight);
+  cursor.y += drawHeight + 4;
+
+  if (photo.caption) {
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "italic");
+    doc.setTextColor(100);
+    doc.text(photo.caption, MARGIN + 8, cursor.y, { maxWidth: drawWidth });
+    doc.setTextColor(0);
+    doc.setFont("helvetica", "normal");
+    cursor.y += 14;
+  }
+  cursor.y += 6;
+}
+
+function drawPhotoUnavailable(doc: jsPDF, cursor: Cursor, p: Photo) {
+  ensureSpace(doc, cursor, 18);
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "italic");
+  doc.setTextColor(160);
+  doc.text(`[Photo unavailable: ${p.url}]`, MARGIN + 8, cursor.y, {
+    maxWidth: CONTENT_WIDTH - 8,
+  });
+  doc.setTextColor(0);
+  doc.setFont("helvetica", "normal");
+  cursor.y += 16;
+}
+
 function formatTimestamp(iso: string): string {
   try {
     return new Date(iso).toLocaleString("en-US", {
@@ -256,9 +359,16 @@ function formatTimestamp(iso: string): string {
   }
 }
 
-export function generateMissionPdf(input: MissionPdfInput): jsPDF {
+export async function generateMissionPdf(input: MissionPdfInput): Promise<jsPDF> {
   const doc = new jsPDF({ orientation: "portrait", unit: "pt", format: "letter" });
   const cursor: Cursor = { y: MARGIN };
+
+  // Fetch photo data eagerly + in parallel so the PDF generation itself
+  // stays a tight synchronous walk. Failed fetches surface as
+  // "[Photo unavailable: <url>]" placeholders rather than aborting.
+  const fetchedPhotos: Array<FetchedPhoto | null> = input.photos
+    ? await Promise.all(input.photos.map(fetchPhoto))
+    : [];
 
   drawHeader(doc, cursor, input.missionNumber, input.timestamp);
 
@@ -297,6 +407,18 @@ export function generateMissionPdf(input: MissionPdfInput): jsPDF {
     }
   }
 
+  if (input.photos && input.photos.length > 0) {
+    drawSectionTitle(doc, cursor, "Photos");
+    input.photos.forEach((p, i) => {
+      const fetched = fetchedPhotos[i];
+      if (fetched) {
+        drawPhoto(doc, cursor, fetched);
+      } else {
+        drawPhotoUnavailable(doc, cursor, p);
+      }
+    });
+  }
+
   drawSignatureBlock(doc, cursor);
 
   // Footer numbering happens after all content is laid out so we know the
@@ -306,8 +428,8 @@ export function generateMissionPdf(input: MissionPdfInput): jsPDF {
   return doc;
 }
 
-export function downloadMissionPdf(input: MissionPdfInput): void {
-  const doc = generateMissionPdf(input);
+export async function downloadMissionPdf(input: MissionPdfInput): Promise<void> {
+  const doc = await generateMissionPdf(input);
   const safeMission = input.missionNumber.replace(/[^a-zA-Z0-9-_]/g, "_");
   doc.save(`fly-witus-mission-${safeMission}.pdf`);
 }

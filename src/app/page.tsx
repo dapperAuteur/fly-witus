@@ -5,10 +5,10 @@ import { Analytics } from "@vercel/analytics/next"
 import Image from 'next/image';
 import Link from 'next/link';
 import { CHECKLIST_SECTIONS, type ChecklistItem } from '@/lib/checklist-data';
-import { downloadMissionPdf } from '@/lib/pdf';
+import { downloadMissionPdf, type Photo } from '@/lib/pdf';
 import { useSession, signOut } from '@/lib/auth-client';
 import { fetchWeatherSnapshot, fetchWeatherForZip } from '@/lib/noaa';
-// import { CldImage } from 'next-cloudinary'; Get Cloudinary Component to work.
+import { PhotoUploadButton } from './_components/photo-upload';
 
 // --- TYPE DEFINITIONS ---
 interface AircraftProfile {
@@ -34,6 +34,7 @@ interface MissionLog {
     precipitation?: string;
   };
   flightRecords: FlightRecord[];
+  photos?: Photo[];
 }
 
 interface FlightRecord {
@@ -144,11 +145,12 @@ const exportToJSON = (mission: MissionLog): void => {
   URL.revokeObjectURL(url);
 };
 
-const exportToPDF = (mission: MissionLog): void => {
+const exportToPDF = async (mission: MissionLog): Promise<void> => {
   // Real PDF via src/lib/pdf.ts. Fixes the iOS Safari "open in print
   // dialog" issue from v3 §0 — jsPDF emits a real PDF blob the browser
-  // can download as a file.
-  downloadMissionPdf({
+  // can download as a file. async because photo embedding fetches
+  // image data; downloadMissionPdf awaits all photos before save().
+  await downloadMissionPdf({
     missionNumber: mission.missionNumber,
     timestamp: mission.timestamp,
     pilotName: mission.pilotName,
@@ -158,6 +160,7 @@ const exportToPDF = (mission: MissionLog): void => {
     weather: mission.weather,
     completed: mission.completed,
     flightRecords: mission.flightRecords,
+    photos: mission.photos,
   });
 };
 
@@ -393,6 +396,8 @@ const UASChecklistApp: React.FC = () => {
   const [subValues, setSubValues] = useState<{ [key: string]: { [subId: string]: string } }>({});
   const [weather, setWeather] = useState<{ temperature?: string; wind?: string; precipitation?: string }>({});
   const [flightRecords, setFlightRecords] = useState<FlightRecord[]>([]);
+  const [photos, setPhotos] = useState<Photo[]>([]);
+  const [exportingPdf, setExportingPdf] = useState<boolean>(false);
   
   const [recentMissions, setRecentMissions] = useState<MissionLog[]>([]);
   const [aircraftProfiles, setAircraftProfiles] = useState<AircraftProfile[]>([]);
@@ -416,6 +421,7 @@ const UASChecklistApp: React.FC = () => {
       if (currentMission.completed) setCompleted(currentMission.completed);
       if (currentMission.weather) setWeather(currentMission.weather);
       if (currentMission.flightRecords) setFlightRecords(currentMission.flightRecords);
+      if (currentMission.photos) setPhotos(currentMission.photos);
     }
     
     setRecentMissions(getMissionsFromStorage());
@@ -433,9 +439,10 @@ const UASChecklistApp: React.FC = () => {
       completed,
       weather,
       flightRecords,
+      photos,
     };
     saveCurrentMission(currentMission);
-  }, [pilotName, location, aircraftType, rpCert, selectedProfileId, completed, weather, flightRecords]);
+  }, [pilotName, location, aircraftType, rpCert, selectedProfileId, completed, weather, flightRecords, photos]);
 
   // --- HANDLERS ---
   const handleToggle = (itemId: string) => {
@@ -560,6 +567,7 @@ const UASChecklistApp: React.FC = () => {
       completed: flattenedCompleted,
       weather,
       flightRecords,
+      photos,
     };
 
     saveMissionToStorage(missionLog);
@@ -574,6 +582,7 @@ const UASChecklistApp: React.FC = () => {
     setSubValues({});
     setWeather({});
     setFlightRecords([]);
+    setPhotos([]);
     setPilotName('');
     setLocation('');
     setAircraftType('');
@@ -631,8 +640,13 @@ const UASChecklistApp: React.FC = () => {
     exportToJSON(mission);
   };
 
-  const handleExportPDF = (mission: MissionLog) => {
-    exportToPDF(mission);
+  const handleExportPDF = async (mission: MissionLog) => {
+    setExportingPdf(true);
+    try {
+      await exportToPDF(mission);
+    } finally {
+      setExportingPdf(false);
+    }
   };
 
   // Calculate progress
@@ -884,6 +898,44 @@ const UASChecklistApp: React.FC = () => {
           </div>
         ))}
 
+        {/* Photos */}
+        <div className="bg-white rounded-2xl shadow-lg p-6 mt-6 border-t-4 border-fuchsia-500">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-2xl font-bold text-gray-900">Photos</h2>
+            <PhotoUploadButton
+              onAdd={(photo) => setPhotos((prev) => [...prev, photo])}
+            />
+          </div>
+          {photos.length === 0 ? (
+            <p className="text-gray-500 text-center py-4">
+              No photos attached yet. Photos appear in the exported PDF.
+            </p>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+              {photos.map((p, idx) => (
+                <div key={`${p.url}-${idx}`} className="relative group">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={p.url}
+                    alt={p.caption ?? `Mission photo ${idx + 1}`}
+                    className="w-full aspect-square object-cover rounded-lg border border-gray-200"
+                  />
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setPhotos((prev) => prev.filter((_, i) => i !== idx))
+                    }
+                    aria-label={`Remove photo ${idx + 1}`}
+                    className="absolute top-1 right-1 bg-red-600 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
         {/* Flight Log */}
         <FlightLogSection
           flightRecords={flightRecords}
@@ -949,9 +1001,10 @@ const UASChecklistApp: React.FC = () => {
                       <div className="flex flex-col gap-2">
                         <button
                           onClick={() => handleExportPDF(mission)}
-                          className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-sm font-semibold transition"
+                          disabled={exportingPdf}
+                          className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-sm font-semibold transition disabled:bg-gray-400"
                         >
-                          Export PDF
+                          {exportingPdf ? 'Exporting…' : 'Export PDF'}
                         </button>
                         <button
                           onClick={() => handleExportMission(mission)}

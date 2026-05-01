@@ -4,6 +4,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Analytics } from "@vercel/analytics/next"
 import Image from 'next/image';
 import Link from 'next/link';
+import { useSession, signOut } from '@/lib/auth-client';
 // import { CldImage } from 'next-cloudinary'; Get Cloudinary Component to work.
 
 // --- TYPE DEFINITIONS ---
@@ -583,6 +584,8 @@ const UASChecklistApp: React.FC = () => {
   const [showProfiles, setShowProfiles] = useState<boolean>(false);
   const [loadingWeather, setLoadingWeather] = useState<boolean>(false);
 
+  const { data: session, isPending: sessionLoading } = useSession();
+
   // Load on mount
   useEffect(() => {
     const currentMission = getCurrentMission();
@@ -822,6 +825,30 @@ const UASChecklistApp: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50 font-sans p-4 sm:p-8">
       <div className="max-w-5xl mx-auto">
+        {/* Top bar — sign-in affordance */}
+        <div className="flex justify-end mb-4">
+          {sessionLoading ? (
+            <div className="h-9 w-24 bg-gray-100 rounded-lg animate-pulse" aria-hidden />
+          ) : session ? (
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-gray-600 hidden sm:inline">{session.user.email}</span>
+              <button
+                onClick={() => signOut()}
+                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm font-semibold transition"
+              >
+                Sign Out
+              </button>
+            </div>
+          ) : (
+            <Link
+              href="/login"
+              className="px-4 py-2 bg-sky-600 text-white rounded-lg hover:bg-sky-700 text-sm font-semibold transition"
+            >
+              Sign In
+            </Link>
+          )}
+        </div>
+
         {/* Header */}
         <header className="mb-8 text-center">
           <Analytics />

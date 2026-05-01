@@ -4,23 +4,11 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Analytics } from "@vercel/analytics/next"
 import Image from 'next/image';
 import Link from 'next/link';
-import { useSession, signOut } from '@/lib/auth-client';
+import { CHECKLIST_SECTIONS, type ChecklistItem } from '@/lib/checklist-data';
+import { downloadMissionPdf } from '@/lib/pdf';
 // import { CldImage } from 'next-cloudinary'; Get Cloudinary Component to work.
 
 // --- TYPE DEFINITIONS ---
-interface ChecklistSection {
-  title: string;
-  items: ChecklistItem[];
-}
-
-interface ChecklistItem {
-  id: string;
-  label: string;
-  type: 'checkbox' | 'text' | 'weather';
-  required?: boolean;
-  subfields?: { id: string; label: string; type: 'text' | 'number' }[];
-}
-
 interface AircraftProfile {
   id: string;
   name: string;
@@ -68,108 +56,8 @@ interface WeatherAPIResponse {
   };
 }
 
-// --- CHECKLIST DATA ---
-const CHECKLIST_SECTIONS: ChecklistSection[] = [
-  {
-    title: 'Mission Checklist',
-    items: [
-      { id: 'airport_notified', label: 'Airport(s) Notified', type: 'checkbox', required: true },
-      { id: 'location_ok', label: 'Location is OK to fly', type: 'checkbox', required: true },
-      { id: 'weather_ok', label: 'Weather Forecast OK', type: 'weather', required: true },
-      { id: 'firmware_updated', label: 'Firmware up-to-date', type: 'checkbox' },
-      { id: 'microsd_formatted', label: 'MicroSD Card Formatted', type: 'checkbox' },
-    ]
-  },
-  {
-    title: 'Battery & Equipment',
-    items: [
-      { id: 'uav_batteries_charged', label: 'UAV Batteries Charged', type: 'checkbox', required: true, 
-        subfields: [
-          { id: 'battery1', label: 'Battery 1 volts', type: 'number' },
-          { id: 'battery2', label: 'Battery 2 volts', type: 'number' },
-          { id: 'battery3', label: 'Battery 3 volts', type: 'number' },
-          { id: 'battery4', label: 'Battery 4 volts', type: 'number' },
-        ]
-      },
-      { id: 'controller_charged', label: 'Controller Charged', type: 'checkbox', required: true },
-      { id: 'tablet_charged', label: 'Tablet Charged', type: 'checkbox', required: true },
-      { id: 'phone_charged', label: 'Mobile Phone Charged', type: 'checkbox' },
-    ]
-  },
-  {
-    title: 'Gear Packed',
-    items: [
-      { id: 'gimbal_protector', label: 'Gimbal Protector Installed', type: 'checkbox' },
-      { id: 'propellers_packed', label: 'Propellers Packed', type: 'checkbox', required: true },
-      { id: 'cables_packed', label: 'Cables Packed', type: 'checkbox' },
-      { id: 'filters_packed', label: 'Camera Filters Packed', type: 'checkbox' },
-      { id: 'sunshade_packed', label: 'Sun Shade Packed', type: 'checkbox' },
-      { id: 'tools_packed', label: 'Tools Packed', type: 'checkbox' },
-      { id: 'flight_plan', label: 'Flight Plan designed/entered in software', type: 'checkbox' },
-      { id: 'logbook_packed', label: 'Log Book Packed', type: 'checkbox' },
-    ]
-  },
-  {
-    title: 'Launch Site Checklist',
-    items: [
-      { id: 'weather_verified', label: 'Verify Weather is OK to Fly', type: 'weather', required: true },
-      { id: 'safety_briefing', label: 'Safety Briefing', type: 'checkbox', required: true },
-      { id: 'obstacles_checked', label: 'Check for obstacles, interference', type: 'checkbox', required: true },
-      { id: 'human_activity', label: 'Check for nearby human activity/dangerous situations', type: 'checkbox', required: true },
-      { id: 'launch_pad_downwind', label: 'Verify Launch Pad is down-wind from observers', type: 'checkbox' },
-      { id: 'barriers_placed', label: 'Launch Pad/Barriers Placed', type: 'checkbox' },
-    ]
-  },
-  {
-    title: 'Equipment Checklist',
-    items: [
-      { id: 'airframe_inspected', label: 'Airframe/Landing gear inspected', type: 'checkbox', required: true },
-      { id: 'propellers_attached', label: 'Propellers Inspected/Attached', type: 'checkbox', required: true },
-      { id: 'controller_assembled', label: 'Controller/Tablet Assembled', type: 'checkbox', required: true },
-      { id: 'sd_installed', label: 'SD Card Installed', type: 'checkbox', required: true },
-      { id: 'battery_installed', label: 'Battery Installed', type: 'checkbox', required: true },
-      { id: 'gimbal_protector_removed', label: 'Gimbal/Lens Protector Removed', type: 'checkbox', required: true },
-      { id: 'filters_installed', label: 'Camera Filters Installed', type: 'checkbox' },
-    ]
-  },
-  {
-    title: 'Pre-Flight Checklist',
-    items: [
-      { id: 'aircraft_on_pad', label: 'Aircraft Placed on Launch Pad', type: 'checkbox', required: true },
-      { id: 'controller_on', label: 'Turn on Remote Controller/Tablet/DJI Pilot App', type: 'checkbox', required: true },
-      { id: 'antennas_positioned', label: 'Antennas Properly Positioned', type: 'checkbox', required: true },
-      { id: 'aircraft_on', label: 'Turn on Aircraft', type: 'checkbox', required: true },
-      { id: 'leds_checked', label: 'Check the aircraft status LEDs', type: 'checkbox', required: true },
-      { id: 'gimbal_level', label: 'Verify the gimbal is level, can move unobstructed', type: 'checkbox', required: true },
-      { id: 'rc_battery', label: 'Check RC battery level', type: 'checkbox', required: true },
-      { id: 'aircraft_battery', label: 'Check Aircraft Battery Level', type: 'checkbox', required: true },
-      { id: 'flight_mode', label: 'Check flight mode switch (P-Mode)', type: 'checkbox', required: true },
-      { id: 'satellite_compass', label: 'Check Satellite and Compass status', type: 'checkbox', required: true },
-      { id: 'rth_location', label: 'Set RTH Location and height', type: 'checkbox', required: true },
-      { id: 'camera_settings', label: 'Check camera settings', type: 'checkbox', required: true },
-    ]
-  },
-  {
-    title: 'Take-Off Checklist',
-    items: [
-      { id: 'launch_clear', label: 'Check launch site is clear for take off', type: 'checkbox', required: true },
-      { id: 'motors_started', label: 'Start the motors', type: 'checkbox', required: true },
-      { id: 'takeoff_hover', label: 'Take off and hover', type: 'checkbox', required: true },
-      { id: 'stable_hover', label: 'Make sure the aircraft is stable while hovering', type: 'checkbox', required: true },
-      { id: 'controls_responsive', label: 'Check flight controls, make sure they respond as expected', type: 'checkbox', required: true },
-      { id: 'recording_started', label: 'Start recording video', type: 'checkbox', required: true },
-    ]
-  },
-  {
-    title: 'Post Flight Checklist',
-    items: [
-      { id: 'battery_removed', label: 'Remove Battery from Aircraft', type: 'checkbox', required: true },
-      { id: 'gimbal_guard_installed', label: 'Install Gimbal Guard', type: 'checkbox', required: true },
-      { id: 'equipment_repacked', label: 'Repack all equipment', type: 'checkbox', required: true },
-      { id: 'flight_log_completed', label: 'Complete the Flight Log', type: 'checkbox', required: true },
-    ]
-  },
-];
+// CHECKLIST_SECTIONS now lives in src/lib/checklist-data.ts so the PDF
+// generator can import it without depending on this client component.
 
 // --- STORAGE UTILITIES ---
 const STORAGE_KEY = 'uas_missions';
@@ -265,68 +153,20 @@ const exportToJSON = (mission: MissionLog): void => {
 };
 
 const exportToPDF = (mission: MissionLog): void => {
-  const content = `
-═══════════════════════════════════════════════════════════════
-                        FLY WIT US
-                   fly.witus.online
-        UAS PRE-FLIGHT CHECKLIST - FAA COMPLIANT
-═══════════════════════════════════════════════════════════════
-
-Mission #: ${mission.missionNumber}
-Date: ${new Date(mission.timestamp).toLocaleString()}
-
-───────────────────────────────────────────────────────────────
-MISSION INFORMATION
-───────────────────────────────────────────────────────────────
-Pilot: ${mission.pilotName}
-RP Cert: ${mission.rpCert}
-Location: ${mission.location}
-Aircraft: ${mission.aircraftType}
-
-───────────────────────────────────────────────────────────────
-WEATHER CONDITIONS
-───────────────────────────────────────────────────────────────
-Temperature: ${mission.weather.temperature || 'N/A'}
-Wind: ${mission.weather.wind || 'N/A'}
-Precipitation: ${mission.weather.precipitation || 'N/A'}
-
-───────────────────────────────────────────────────────────────
-CHECKLIST ITEMS COMPLETED
-───────────────────────────────────────────────────────────────
-${Object.entries(mission.completed).map(([key, value]) => 
-  `${key.padEnd(40)}: ${typeof value === 'boolean' ? (value ? '[✓] YES' : '[ ] NO') : value}`
-).join('\n')}
-
-───────────────────────────────────────────────────────────────
-FLIGHT RECORDS
-───────────────────────────────────────────────────────────────
-${mission.flightRecords.map(f => `
-Flight ${f.flightNumber}
-  Takeoff Location: ${f.takeoffLoc}
-  Takeoff Time: ${f.launchTime}
-  Landing Location: ${f.landingLoc}
-  Landing Time: ${f.landingTime}
-  Duration: ${f.elapsedTime}
-  Battery Voltage: ${f.batteryVoltage}
-  Notes: ${f.notes || 'None'}
-`).join('\n')}
-
-═══════════════════════════════════════════════════════════════
-Pilot Signature: _______________________  Date: ______________
-
-This checklist complies with 14 CFR Part 107 regulations.
-Generated by Fly Wit Us UAS Checklist System
-fly.witus.online
-═══════════════════════════════════════════════════════════════
-  `;
-  
-  const blob = new Blob([content], { type: 'text/plain' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = `FlyWitUs-Mission-${mission.missionNumber}.txt`;
-  link.click();
-  URL.revokeObjectURL(url);
+  // Real PDF via src/lib/pdf.ts. Fixes the iOS Safari "open in print
+  // dialog" issue from v3 §0 — jsPDF emits a real PDF blob the browser
+  // can download as a file.
+  downloadMissionPdf({
+    missionNumber: mission.missionNumber,
+    timestamp: mission.timestamp,
+    pilotName: mission.pilotName,
+    location: mission.location,
+    aircraftType: mission.aircraftType,
+    rpCert: mission.rpCert,
+    weather: mission.weather,
+    completed: mission.completed,
+    flightRecords: mission.flightRecords,
+  });
 };
 
 const fetchWeatherData = async (lat: number, lon: number): Promise<WeatherAPIResponse | null> => {

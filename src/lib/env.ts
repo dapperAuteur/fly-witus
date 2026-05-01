@@ -1,0 +1,114 @@
+import { z } from "zod";
+
+const schema = z.object({
+  NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
+
+  NEXT_PUBLIC_APP_URL: z.string().url().default("http://localhost:3000"),
+  NEXT_PUBLIC_APP_NAME: z.string().default("Fly WitUS"),
+  ADMIN_EMAIL: z.string().email(),
+
+  DATABASE_URL: z.string().url(),
+  DATABASE_URL_UNPOOLED: z.string().url().optional(),
+
+  BETTER_AUTH_SECRET: z.string().min(32),
+  BETTER_AUTH_URL: z.string().url(),
+
+  MAILGUN_API_KEY: z.string().optional(),
+  MAILGUN_DOMAIN: z.string().optional(),
+  MAILGUN_REGION: z.enum(["us", "eu"]).default("us"),
+  EMAIL_FROM: z.string().optional(),
+  ADMIN_NOTIFY_EMAIL: z.string().email().optional(),
+
+  STRIPE_SECRET_KEY: z.string().optional(),
+  NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: z.string().optional(),
+  STRIPE_WEBHOOK_SECRET: z.string().optional(),
+  STRIPE_PRICE_ID_MONTHLY: z.string().optional(),
+  STRIPE_PRICE_ID_ANNUAL: z.string().optional(),
+  STRIPE_PRICE_ID_LIFETIME: z.string().optional(),
+
+  NEXT_PUBLIC_CASHAPP_USERNAME: z.string().optional(),
+  NEXT_PUBLIC_CASHAPP_QR_PATH: z.string().optional(),
+
+  NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME: z.string().optional(),
+  CLOUDINARY_API_KEY: z.string().optional(),
+  CLOUDINARY_API_SECRET: z.string().optional(),
+  NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET: z.string().optional(),
+
+  CRON_SECRET: z.string().optional(),
+});
+
+const isProd = process.env.NODE_ENV === "production";
+const isBuildPhase = process.env.NEXT_PHASE === "phase-production-build";
+const allowDevDefaults = !isProd || isBuildPhase;
+
+const devPlaceholders = {
+  ADMIN_EMAIL: "dev@example.com",
+  DATABASE_URL: "postgres://placeholder:placeholder@localhost/fly_witus_dev",
+  BETTER_AUTH_SECRET: "dev-secret-minimum-32-characters-xxxxxxxxxxxx",
+  BETTER_AUTH_URL: "http://localhost:3000",
+} as const;
+
+const input = {
+  NODE_ENV: process.env.NODE_ENV,
+
+  NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
+  NEXT_PUBLIC_APP_NAME: process.env.NEXT_PUBLIC_APP_NAME,
+  ADMIN_EMAIL: process.env.ADMIN_EMAIL ?? (allowDevDefaults ? devPlaceholders.ADMIN_EMAIL : undefined),
+
+  DATABASE_URL:
+    process.env.DATABASE_URL ?? (allowDevDefaults ? devPlaceholders.DATABASE_URL : undefined),
+  DATABASE_URL_UNPOOLED: process.env.DATABASE_URL_UNPOOLED,
+
+  BETTER_AUTH_SECRET:
+    process.env.BETTER_AUTH_SECRET ?? (allowDevDefaults ? devPlaceholders.BETTER_AUTH_SECRET : undefined),
+  BETTER_AUTH_URL:
+    process.env.BETTER_AUTH_URL ?? (allowDevDefaults ? devPlaceholders.BETTER_AUTH_URL : undefined),
+
+  MAILGUN_API_KEY: process.env.MAILGUN_API_KEY,
+  MAILGUN_DOMAIN: process.env.MAILGUN_DOMAIN,
+  MAILGUN_REGION: process.env.MAILGUN_REGION,
+  EMAIL_FROM: process.env.EMAIL_FROM,
+  ADMIN_NOTIFY_EMAIL: process.env.ADMIN_NOTIFY_EMAIL,
+
+  STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
+  NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
+  STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
+  STRIPE_PRICE_ID_MONTHLY: process.env.STRIPE_PRICE_ID_MONTHLY,
+  STRIPE_PRICE_ID_ANNUAL: process.env.STRIPE_PRICE_ID_ANNUAL,
+  STRIPE_PRICE_ID_LIFETIME: process.env.STRIPE_PRICE_ID_LIFETIME,
+
+  NEXT_PUBLIC_CASHAPP_USERNAME: process.env.NEXT_PUBLIC_CASHAPP_USERNAME,
+  NEXT_PUBLIC_CASHAPP_QR_PATH: process.env.NEXT_PUBLIC_CASHAPP_QR_PATH,
+
+  NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
+  CLOUDINARY_API_KEY: process.env.CLOUDINARY_API_KEY,
+  CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET,
+  NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET: process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET,
+
+  CRON_SECRET: process.env.CRON_SECRET,
+};
+
+const parsed = schema.safeParse(input);
+
+if (!parsed.success) {
+  throw new Error(
+    `Invalid environment variables:\n${JSON.stringify(parsed.error.flatten().fieldErrors, null, 2)}`,
+  );
+}
+
+export const env = parsed.data;
+
+export const hasMailgun = Boolean(env.MAILGUN_API_KEY && env.MAILGUN_DOMAIN && env.EMAIL_FROM);
+export const hasStripe = Boolean(
+  env.STRIPE_SECRET_KEY &&
+    env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY &&
+    env.STRIPE_WEBHOOK_SECRET &&
+    env.STRIPE_PRICE_ID_MONTHLY &&
+    env.STRIPE_PRICE_ID_ANNUAL &&
+    env.STRIPE_PRICE_ID_LIFETIME,
+);
+export const hasCashApp = Boolean(env.NEXT_PUBLIC_CASHAPP_USERNAME);
+export const hasCloudinary = Boolean(
+  env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME && env.CLOUDINARY_API_KEY && env.CLOUDINARY_API_SECRET,
+);
+export const hasCron = Boolean(env.CRON_SECRET);

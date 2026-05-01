@@ -6,6 +6,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { CHECKLIST_SECTIONS, type ChecklistItem } from '@/lib/checklist-data';
 import { downloadMissionPdf } from '@/lib/pdf';
+import { useSession, signOut } from '@/lib/auth-client';
 // import { CldImage } from 'next-cloudinary'; Get Cloudinary Component to work.
 
 // --- TYPE DEFINITIONS ---

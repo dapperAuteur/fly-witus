@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { CHECKLIST_SECTIONS, type ChecklistItem } from '@/lib/checklist-data';
 import { downloadMissionPdf } from '@/lib/pdf';
 import { useSession, signOut } from '@/lib/auth-client';
+import { fetchWeatherSnapshot, fetchWeatherForZip } from '@/lib/noaa';
 // import { CldImage } from 'next-cloudinary'; Get Cloudinary Component to work.
 
 // --- TYPE DEFINITIONS ---
@@ -46,19 +47,9 @@ interface FlightRecord {
   notes: string;
 }
 
-interface WeatherAPIResponse {
-  properties?: {
-    periods?: Array<{
-      temperature: number;
-      temperatureUnit: string;
-      windSpeed: string;
-      shortForecast: string;
-    }>;
-  };
-}
-
 // CHECKLIST_SECTIONS now lives in src/lib/checklist-data.ts so the PDF
 // generator can import it without depending on this client component.
+// NOAA + Census ZIP lookup live in src/lib/noaa.ts.
 
 // --- STORAGE UTILITIES ---
 const STORAGE_KEY = 'uas_missions';
@@ -168,22 +159,6 @@ const exportToPDF = (mission: MissionLog): void => {
     completed: mission.completed,
     flightRecords: mission.flightRecords,
   });
-};
-
-const fetchWeatherData = async (lat: number, lon: number): Promise<WeatherAPIResponse | null> => {
-  try {
-    const pointResponse = await fetch(`https://api.weather.gov/points/${lat},${lon}`);
-    const pointData = await pointResponse.json();
-    const forecastUrl = pointData.properties.forecast;
-    
-    const forecastResponse = await fetch(forecastUrl);
-    const forecastData = await forecastResponse.json();
-    
-    return forecastData;
-  } catch (error) {
-    console.error('Weather API error:', error);
-    return null;
-  }
 };
 
 // --- SUB-COMPONENTS ---
@@ -424,6 +399,8 @@ const UASChecklistApp: React.FC = () => {
   const [showHistory, setShowHistory] = useState<boolean>(false);
   const [showProfiles, setShowProfiles] = useState<boolean>(false);
   const [loadingWeather, setLoadingWeather] = useState<boolean>(false);
+  const [zipCode, setZipCode] = useState<string>('');
+  const [weatherError, setWeatherError] = useState<string | null>(null);
 
   const { data: session, isPending: sessionLoading } = useSession();
 
@@ -517,29 +494,45 @@ const UASChecklistApp: React.FC = () => {
   };
 
   const handleFetchWeather = async () => {
+    if (!('geolocation' in navigator)) {
+      setWeatherError('Geolocation not supported by this browser. Try the ZIP lookup.');
+      return;
+    }
     setLoadingWeather(true);
-    if ('geolocation' in navigator) {
-      navigator.geolocation.getCurrentPosition(async (position) => {
+    setWeatherError(null);
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
         const { latitude, longitude } = position.coords;
-        const weatherData = await fetchWeatherData(latitude, longitude);
-        
-        if (weatherData?.properties?.periods?.[0]) {
-          const current = weatherData.properties.periods[0];
-          setWeather({
-            temperature: `${current.temperature}°${current.temperatureUnit}`,
-            wind: current.windSpeed,
-            precipitation: current.shortForecast
-          });
+        const snapshot = await fetchWeatherSnapshot({ lat: latitude, lon: longitude });
+        if (snapshot) {
+          setWeather(snapshot);
+        } else {
+          setWeatherError("Couldn't reach NOAA. Try ZIP lookup or enter weather manually.");
         }
         setLoadingWeather(false);
-      }, () => {
-        alert('Enable location access to fetch weather');
+      },
+      () => {
+        setWeatherError('Location access denied. Try ZIP lookup instead.');
         setLoadingWeather(false);
-      });
-    } else {
-      alert('Geolocation not supported');
-      setLoadingWeather(false);
+      },
+    );
+  };
+
+  const handleFetchWeatherByZip = async () => {
+    const zip = zipCode.trim();
+    if (!/^\d{5}$/.test(zip)) {
+      setWeatherError('Enter a 5-digit US ZIP code.');
+      return;
     }
+    setLoadingWeather(true);
+    setWeatherError(null);
+    const snapshot = await fetchWeatherForZip(zip);
+    if (snapshot) {
+      setWeather(snapshot);
+    } else {
+      setWeatherError(`Couldn't fetch weather for ${zip}. Check the ZIP or enter manually.`);
+    }
+    setLoadingWeather(false);
   };
 
   const handleSaveMission = () => {
@@ -832,15 +825,40 @@ const UASChecklistApp: React.FC = () => {
             </div>
           </div>
           
-          <div className="mt-4">
+          <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
             <button
               onClick={handleFetchWeather}
               disabled={loadingWeather}
-              className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold transition disabled:bg-gray-400"
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold transition disabled:bg-gray-400"
             >
-              {loadingWeather ? 'Fetching Weather...' : 'Auto-Fetch Weather (NOAA)'}
+              {loadingWeather ? 'Fetching…' : 'Use My Location'}
             </button>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                inputMode="numeric"
+                pattern="\d{5}"
+                maxLength={5}
+                value={zipCode}
+                onChange={(e) => setZipCode(e.target.value.replace(/\D/g, ''))}
+                placeholder="ZIP (e.g. 90210)"
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+                disabled={loadingWeather}
+              />
+              <button
+                onClick={handleFetchWeatherByZip}
+                disabled={loadingWeather || zipCode.length !== 5}
+                className="px-4 py-2 bg-sky-600 text-white rounded-lg hover:bg-sky-700 font-semibold transition disabled:bg-gray-400"
+              >
+                Lookup
+              </button>
+            </div>
           </div>
+          {weatherError && (
+            <p role="alert" className="mt-2 text-sm text-red-600">
+              {weatherError}
+            </p>
+          )}
         </div>
 
         {/* Checklist Sections */}

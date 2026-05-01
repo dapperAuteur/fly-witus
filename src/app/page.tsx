@@ -8,6 +8,14 @@ import { CHECKLIST_SECTIONS, type ChecklistItem } from '@/lib/checklist-data';
 import { downloadMissionPdf, type Photo } from '@/lib/pdf';
 import { useSession, signOut } from '@/lib/auth-client';
 import { fetchWeatherSnapshot, fetchWeatherForZip } from '@/lib/noaa';
+import {
+  flushOutbox,
+  listMissions,
+  pendingCount,
+  saveMission,
+  warmCacheFromServer,
+} from '@/lib/missions-store';
+import { useOnlineStatus } from '@/hooks/use-online-status';
 import { PhotoUploadButton } from './_components/photo-upload';
 
 // --- TYPE DEFINITIONS ---
@@ -53,7 +61,9 @@ interface FlightRecord {
 // NOAA + Census ZIP lookup live in src/lib/noaa.ts.
 
 // --- STORAGE UTILITIES ---
-const STORAGE_KEY = 'uas_missions';
+// Mission history is now owned by src/lib/missions-store.ts (auth-aware:
+// localStorage for anonymous, /api/missions + IndexedDB outbox for authed).
+// The draft/WIP-mission and aircraft-profile keys below stay local-only.
 const PROFILES_KEY = 'uas_aircraft_profiles';
 const CURRENT_MISSION_KEY = 'uas_current_mission';
 
@@ -83,26 +93,6 @@ const clearCurrentMission = (): void => {
   }
 };
 
-const saveMissionToStorage = (mission: MissionLog): void => {
-  try {
-    const existingData = window.localStorage.getItem(STORAGE_KEY);
-    const missions = existingData ? JSON.parse(existingData) : [];
-    missions.unshift(mission);
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(missions));
-  } catch (error) {
-    console.error('Failed to save mission:', error);
-  }
-};
-
-const getMissionsFromStorage = (): MissionLog[] => {
-  try {
-    const data = window.localStorage.getItem(STORAGE_KEY);
-    return data ? JSON.parse(data) : [];
-  } catch (error) {
-    console.error('Failed to load missions:', error);
-    return [];
-  }
-};
 
 const saveProfilesToStorage = (profiles: AircraftProfile[]): void => {
   try {
@@ -408,8 +398,11 @@ const UASChecklistApp: React.FC = () => {
   const [weatherError, setWeatherError] = useState<string | null>(null);
 
   const { data: session, isPending: sessionLoading } = useSession();
+  const isOnline = useOnlineStatus();
+  const authed = Boolean(session?.user);
+  const [pendingSyncCount, setPendingSyncCount] = useState<number>(0);
 
-  // Load on mount
+  // Load draft + aircraft profiles on mount (these stay localStorage-only).
   useEffect(() => {
     const currentMission = getCurrentMission();
     if (currentMission) {
@@ -423,10 +416,51 @@ const UASChecklistApp: React.FC = () => {
       if (currentMission.flightRecords) setFlightRecords(currentMission.flightRecords);
       if (currentMission.photos) setPhotos(currentMission.photos);
     }
-    
-    setRecentMissions(getMissionsFromStorage());
     setAircraftProfiles(getProfilesFromStorage());
   }, []);
+
+  // Load mission history via missions-store. Re-runs when sign-in state
+  // changes so the user sees their cloud missions on sign-in and falls
+  // back to localStorage on sign-out.
+  useEffect(() => {
+    if (sessionLoading) return;
+    let cancelled = false;
+    (async () => {
+      const missions = await listMissions(authed);
+      if (!cancelled) setRecentMissions(missions);
+      const count = authed ? await pendingCount() : 0;
+      if (!cancelled) setPendingSyncCount(count);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [authed, sessionLoading]);
+
+  // After sign-in, warm the IDB cache so the user sees their history when
+  // they next go offline.
+  useEffect(() => {
+    if (authed && !sessionLoading) {
+      void warmCacheFromServer();
+    }
+  }, [authed, sessionLoading]);
+
+  // Drain the offline outbox whenever the network returns.
+  useEffect(() => {
+    if (!authed || !isOnline) return;
+    let cancelled = false;
+    (async () => {
+      const result = await flushOutbox();
+      if (cancelled) return;
+      if (result.flushed > 0) {
+        const missions = await listMissions(authed);
+        if (!cancelled) setRecentMissions(missions);
+      }
+      setPendingSyncCount(result.remaining);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [authed, isOnline]);
 
   // Auto-save on every change
   useEffect(() => {
@@ -542,7 +576,7 @@ const UASChecklistApp: React.FC = () => {
     setLoadingWeather(false);
   };
 
-  const handleSaveMission = () => {
+  const handleSaveMission = async () => {
     if (!pilotName || !location || !aircraftType) {
       alert('Please fill in Pilot Name, Location, and Aircraft Type');
       return;
@@ -570,10 +604,16 @@ const UASChecklistApp: React.FC = () => {
       photos,
     };
 
-    saveMissionToStorage(missionLog);
+    // missions-store handles auth-aware persistence: localStorage for
+    // anonymous, /api/missions + IDB outbox for signed-in users.
+    await saveMission(authed, missionLog);
     alert(`Mission ${missionNumber} saved!`);
-    
-    setRecentMissions(getMissionsFromStorage());
+
+    const refreshed = await listMissions(authed);
+    setRecentMissions(refreshed);
+    if (authed) {
+      setPendingSyncCount(await pendingCount());
+    }
     resetForm();
   };
 
@@ -673,8 +713,23 @@ const UASChecklistApp: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50 font-sans p-4 sm:p-8">
       <div className="max-w-5xl mx-auto">
-        {/* Top bar — sign-in affordance */}
-        <div className="flex justify-end mb-4">
+        {/* Top bar — sync state (left) + sign-in affordance (right) */}
+        <div className="flex justify-between items-center mb-4 gap-3">
+          <div className="flex-1 min-w-0">
+            {authed && !isOnline && (
+              <span className="inline-flex items-center gap-2 text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-3 py-1">
+                <span className="w-2 h-2 rounded-full bg-amber-500" aria-hidden />
+                Offline
+                {pendingSyncCount > 0 && ` · ${pendingSyncCount} pending`}
+              </span>
+            )}
+            {authed && isOnline && pendingSyncCount > 0 && (
+              <span className="inline-flex items-center gap-2 text-xs font-semibold text-sky-700 bg-sky-50 border border-sky-200 rounded-full px-3 py-1">
+                <span className="w-2 h-2 rounded-full bg-sky-500 animate-pulse" aria-hidden />
+                Syncing {pendingSyncCount}…
+              </span>
+            )}
+          </div>
           {sessionLoading ? (
             <div className="h-9 w-24 bg-gray-100 rounded-lg animate-pulse" aria-hidden />
           ) : session ? (

@@ -18,6 +18,9 @@ const eslintConfig = [
       "out/**",
       "build/**",
       "next-env.d.ts",
+      // serwist-generated service worker bundles — minified, not for human review
+      "public/sw.js",
+      "public/swe-worker-*.js",
     ],
   },
 ];

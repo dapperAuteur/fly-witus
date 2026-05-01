@@ -1,6 +1,7 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { ServiceWorkerRegistration } from "./_components/sw-register";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -14,7 +15,25 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Fly WitUS by BAM",
-  description: "UAS Pre-Flight Checklist and Post-Flight Log App. Export Your Flight Data to PDF or JSON.",
+  description:
+    "UAS Pre-Flight Checklist and Post-Flight Log App. Export Your Flight Data to PDF or JSON.",
+  // PWA polish: apple-touch-icon for iOS home-screen install + manifest
+  // is auto-served by app/manifest.ts at /manifest.webmanifest.
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Fly WitUS",
+  },
+  icons: {
+    icon: "/flywitus-platypus-logo.png",
+    apple: "/flywitus-platypus-logo.png",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#0284c7",
+  width: "device-width",
+  initialScale: 1,
 };
 
 export default function RootLayout({
@@ -27,6 +46,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <ServiceWorkerRegistration />
         {children}
       </body>
     </html>

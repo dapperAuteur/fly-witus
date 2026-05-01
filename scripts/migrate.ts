@@ -15,6 +15,16 @@ import { migrate } from "drizzle-orm/node-postgres/migrator";
 // not a real connection target — fail loudly before pg's DNS resolver does.
 const STUB_HOSTNAMES = new Set(["host", "host-direct", "host-pooled"]);
 const STUB_USERPASS = new Set(["user:pass", "username:password", "placeholder:placeholder"]);
+const STUB_DB_NAMES = new Set([
+  "db",
+  "database",
+  "dbname",
+  "placeholder",
+  "your_db",
+  "your_database",
+  "replace_me",
+  "replace_with_neon_db_name",
+]);
 
 type Source = "DATABASE_URL_UNPOOLED" | "DATABASE_URL";
 
@@ -86,7 +96,25 @@ if (!parsed.hostname.includes(".") && parsed.hostname !== "localhost") {
   );
 }
 
-console.log(`→ Connecting to ${parsed.hostname} as ${parsed.username} (DDL via ${source})`);
+const dbName = parsed.pathname.replace(/^\//, "").toLowerCase();
+
+if (!dbName) {
+  fail(
+    `${source} has no database name in the path. Expected .../<dbname>?sslmode=require — typically /neondb for Neon.`,
+  );
+}
+
+if (STUB_DB_NAMES.has(dbName) || dbName.startsWith("replace_")) {
+  fail(
+    `${source} database name is "${dbName}" — that's a placeholder, not a real Neon database.\n` +
+      `  Fix:    in .env.local, replace .../${dbName}? with the actual database name (typically "neondb").\n` +
+      `  Find it: copy the URL verbatim from Vercel → Storage → Neon, or run \`SELECT current_database()\` in Neon SQL Editor.`,
+  );
+}
+
+console.log(
+  `→ Connecting to ${parsed.hostname}/${dbName} as ${parsed.username} (DDL via ${source})`,
+);
 
 const pool = new Pool({ connectionString: url });
 const db = drizzle(pool);

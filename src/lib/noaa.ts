@@ -15,9 +15,11 @@
 //   complex for the same outcome. Zippopotam is the simplest free
 //   alternative that maps to our exact use case.
 //
-// NOAA api.weather.gov is keyless; first /points lookup can be slow (5–8s
-// uncached), so we use an 8s timeout. Subsequent lookups for the same
-// coordinates are typically sub-second (NOAA caches the forecast URL).
+// 12s timeout on every fetch. NOAA's first /points lookup can take 5–8s
+// uncached, and Zippopotam cold-start connections from cellular/hotspot
+// networks were observed timing out at 8s during smoke testing — 12s
+// covers both without dragging on a true outage. Warm calls return in
+// 1–4s, so this only matters for the first request after idle.
 //
 // Failures (timeout, network, parse) collapse to null. The page UI surfaces
 // "Couldn't fetch" without leaking details — that's the "graceful fallback"
@@ -25,7 +27,7 @@
 
 const ZIPPOPOTAM = "https://api.zippopotam.us/us";
 const NOAA_POINTS = "https://api.weather.gov/points";
-const FETCH_TIMEOUT_MS = 8000;
+const FETCH_TIMEOUT_MS = 12_000;
 
 export interface LatLon {
   lat: number;

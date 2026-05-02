@@ -117,3 +117,58 @@ export async function sendMagicLinkEmail(input: { to: string; url: string }): Pr
       `<p style="color:#666;font-size:12px">If you didn't request this, you can ignore this email.</p>`,
   });
 }
+
+// v3 §2B confirmation email — sent when admin verifies a CashApp payment
+// and activates the user's lifetime tier.
+export async function sendCashAppActivatedEmail(input: { to: string }): Promise<void> {
+  await sendEmail({
+    to: input.to,
+    subject: "Your Fly WitUS Lifetime Account is Active",
+    text:
+      `Your payment has been verified and your lifetime account is now active.\n\n` +
+      `Sign in at https://fly.witus.online to access all features.\n\n` +
+      `Questions? Reply to this email.\n\n` +
+      `— BAM, Fly WitUS`,
+    html:
+      `<p>Your payment has been verified and your lifetime account is now active.</p>` +
+      `<p><a href="https://fly.witus.online">Sign in at fly.witus.online</a> to access all features.</p>` +
+      `<p>Questions? Reply to this email.</p>` +
+      `<p>— BAM, Fly WitUS</p>`,
+  });
+}
+
+// v3 §2B rejection email — sent when admin rejects a CashApp payment
+// (could not match the transaction, wrong amount, etc.). Reason comes
+// from the admin form so the user knows what to fix.
+export async function sendCashAppRejectedEmail(input: {
+  to: string;
+  reason: string;
+}): Promise<void> {
+  await sendEmail({
+    to: input.to,
+    subject: "About your Fly WitUS payment",
+    text:
+      `We couldn't verify your CashApp payment for a Fly WitUS lifetime account.\n\n` +
+      `Reason: ${input.reason}\n\n` +
+      `If you think this was a mistake, please reply to this email with details.\n` +
+      `Otherwise, you can re-submit at https://fly.witus.online/cashapp/request after re-sending payment.\n\n` +
+      `— BAM, Fly WitUS`,
+    html:
+      `<p>We couldn't verify your CashApp payment for a Fly WitUS lifetime account.</p>` +
+      `<p><strong>Reason:</strong> ${escapeHtml(input.reason)}</p>` +
+      `<p>If you think this was a mistake, please reply to this email with details.</p>` +
+      `<p>Otherwise, you can <a href="https://fly.witus.online/cashapp/request">re-submit</a> after re-sending payment.</p>` +
+      `<p>— BAM, Fly WitUS</p>`,
+  });
+}
+
+// Minimal HTML escape so admin-supplied rejection reasons can't inject
+// arbitrary markup into the email body.
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}

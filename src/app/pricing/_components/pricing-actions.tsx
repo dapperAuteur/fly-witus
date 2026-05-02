@@ -63,12 +63,17 @@ export function PricingActions({
   }
 
   function startCashAppFlow() {
-    // Placeholder until feat/track-e-cashapp-flow lands. Click takes
-    // the user to /cashapp/request which doesn't exist yet — replaced
-    // with the real form in the next branch.
-    setError(
-      "CashApp activation goes live shortly. For now, use card checkout — same lifetime, instant activation.",
-    );
+    // Anonymous users get sent to /login first; the post-login flow
+    // lands on / which is fine — they can come back to /pricing → click
+    // CashApp again. /cashapp/request itself also redirects to /login
+    // when unauthenticated (server-side check), so this is belt and
+    // suspenders.
+    if (sessionLoading) return;
+    if (!session) {
+      router.push("/login");
+      return;
+    }
+    router.push("/cashapp/request");
   }
 
   return (

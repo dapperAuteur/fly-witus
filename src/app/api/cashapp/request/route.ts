@@ -4,6 +4,7 @@ import { z } from "zod";
 import { db } from "@/db/client";
 import { users } from "@/db/schema/auth";
 import { requireUser } from "@/lib/api-auth";
+import { notifyAdminOfNewCashAppRequest } from "@/lib/admin-notify";
 
 // POST /api/cashapp/request — user submits their CashApp username after
 // sending payment via the CashApp app. Admin reviews + activates from
@@ -68,12 +69,14 @@ export async function POST(req: Request) {
     );
   }
 
+  const requestedAt = new Date();
+
   await db
     .update(users)
     .set({
       cashappUsername,
       cashappPaymentStatus: "pending",
-      cashappRequestedAt: new Date(),
+      cashappRequestedAt: requestedAt,
       // Clear prior reject metadata if the user is re-submitting after a
       // rejection, so the admin queue shows a clean pending row.
       cashappActivatedAt: null,
@@ -82,6 +85,19 @@ export async function POST(req: Request) {
       updatedAt: new Date(),
     })
     .where(eq(users.id, userOrRes.id));
+
+  // Layer-1 alert: fire admin notifications immediately so the 24h SLA
+  // doesn't depend on the daily cron. Email is always-on; Inbox push
+  // (which carries SMS escalation) is capability-gated and a no-op
+  // until INBOX_* envs are populated. Both channels fail soft inside
+  // notifyAdminOfNewCashAppRequest — the user's submission is never
+  // blocked by a flaky downstream.
+  await notifyAdminOfNewCashAppRequest({
+    userEmail: userOrRes.email,
+    userId: userOrRes.id,
+    cashappUsername,
+    requestedAt,
+  });
 
   return NextResponse.json({ ok: true });
 }

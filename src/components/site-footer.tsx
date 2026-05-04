@@ -49,6 +49,8 @@ export function SiteFooter() {
           <p className="text-xs text-gray-500">UAS pre-flight + flight log</p>
         </div>
 
+        <RiseWellnessCallout />
+
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 text-sm">
           <div>
             <p className="text-gray-900 font-semibold mb-2">Ecosystem</p>
@@ -156,5 +158,126 @@ export function SiteFooter() {
         </div>
       </div>
     </footer>
+  );
+}
+
+/**
+ * Mental health support callout — mirrors the Rise Wellness section at
+ * https://www.centenarianos.com/safety#rise-wellness so the same partner
+ * surface appears across the WitUS ecosystem. Independent provider; the
+ * non-affiliation disclaimer is mandatory and stays verbatim.
+ *
+ * Placed above the three-column grid (rather than buried inside Partners
+ * & Legal) because mental-health resources warrant prominence per the
+ * pattern centenarianos uses on its dedicated /safety page.
+ */
+function RiseWellnessCallout() {
+  return (
+    <section
+      aria-labelledby="rise-wellness-heading"
+      className="mb-8 rounded-lg border border-sky-100 bg-sky-50/60 p-5 text-sm"
+    >
+      <header className="mb-3">
+        <p className="text-[11px] uppercase tracking-wide text-sky-700 font-semibold">
+          Mental health support
+        </p>
+        <h2
+          id="rise-wellness-heading"
+          className="text-base font-semibold text-gray-900"
+        >
+          Rise Wellness of Indiana
+        </h2>
+        <p className="text-xs text-gray-500 mt-0.5">
+          Independent mental health provider · Not affiliated with Fly.WitUS
+        </p>
+      </header>
+
+      <p className="text-gray-700 leading-relaxed">
+        Rise Wellness of Indiana provides compassionate, personalized,
+        holistic mental health care — evidence-based medicine, trauma-informed
+        care, and a whole-person approach to help you heal, grow, and thrive
+        in mind, body, and spirit.
+      </p>
+
+      <div className="mt-4 grid gap-4 sm:grid-cols-2">
+        <div className="space-y-1">
+          <p className="text-[11px] uppercase tracking-wide text-gray-500 font-semibold">
+            Services
+          </p>
+          <ul className="text-xs text-gray-700 space-y-0.5">
+            <li>ADHD testing &amp; management (in-person and from home)</li>
+            <li>Anxiety &amp; depression</li>
+            <li>Maternal mental health</li>
+            <li>Medication management</li>
+            <li>GeneSight® genetic testing</li>
+            <li>Behavioral therapy &amp; coaching</li>
+            <li>Routine lab testing</li>
+          </ul>
+        </div>
+
+        <div className="space-y-1">
+          <p className="text-[11px] uppercase tracking-wide text-gray-500 font-semibold">
+            Visit or call
+          </p>
+          <address className="not-italic text-xs text-gray-700 leading-relaxed">
+            320 North Meridian Street
+            <br />
+            Indianapolis, IN 46204
+            <br />
+            Mon–Sat by appointment · Sun closed
+          </address>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 pt-2 text-xs">
+            <a
+              href="tel:+13179650299"
+              className="inline-flex items-center min-h-[28px] font-medium text-sky-700 hover:underline focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600 rounded"
+            >
+              317-965-0299
+            </a>
+            <span aria-hidden="true" className="text-gray-300">
+              ·
+            </span>
+            <a
+              href="https://risewellnessofindiana.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center min-h-[28px] font-medium text-sky-700 hover:underline focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600 rounded"
+            >
+              risewellnessofindiana.com
+              <span className="sr-only"> (opens in new tab)</span>
+            </a>
+            <span aria-hidden="true" className="text-gray-300">
+              ·
+            </span>
+            <a
+              href="https://www.centenarianos.com/safety#rise-wellness"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center min-h-[28px] font-medium text-sky-700 hover:underline focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600 rounded"
+            >
+              Full safety page
+              <span className="sr-only"> on centenarianos.com (opens in new tab)</span>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <blockquote className="mt-4 border-l-2 border-sky-300 pl-3 text-xs italic text-gray-600">
+        &ldquo;At Rise Wellness, we believe everyone has the capacity to rise
+        above challenges and live a fulfilling, healthy life. Our care is
+        guided by the belief that healing is personal, holistic, and rooted
+        in compassion.&rdquo;
+        <span className="block not-italic mt-1 text-gray-500">
+          — Rise Wellness of Indiana
+        </span>
+      </blockquote>
+
+      <p className="mt-4 text-[11px] leading-relaxed text-gray-500">
+        Rise Wellness of Indiana is an independent organization. They are
+        not affiliated with, employed by, or endorsed by Fly.WitUS,
+        CentenarianOS, B4C LLC, AwesomeWebStore.com, or Anthony McDonald.
+        We are grateful for their collaboration on mental health safety
+        resources for our community.
+      </p>
+    </section>
   );
 }

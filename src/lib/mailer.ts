@@ -172,3 +172,87 @@ function escapeHtml(s: string): string {
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
 }
+
+// v3 §2B + Layer-1 alerting — fires the moment a user submits a CashApp
+// request via /api/cashapp/request. Lets admin see the queue immediately
+// instead of waiting on the daily cron sweep. The Inbox push (separate
+// channel) handles SMS escalation; this email is the always-on baseline.
+export async function sendAdminCashAppNewRequestEmail(input: {
+  to: string;
+  userEmail: string;
+  cashappUsername: string;
+}): Promise<void> {
+  const safeUser = escapeHtml(input.userEmail);
+  const safeUsername = escapeHtml(input.cashappUsername);
+  await sendEmail({
+    to: input.to,
+    subject: `New CashApp request: ${input.userEmail}`,
+    text:
+      `A pilot just submitted a CashApp lifetime request.\n\n` +
+      `User:    ${input.userEmail}\n` +
+      `CashApp: ${input.cashappUsername}\n\n` +
+      `Verify the payment in CashApp, then activate via the admin queue:\n` +
+      `https://fly.witus.online/admin/cashapp\n\n` +
+      `24-hour SLA — confirm within a day.`,
+    html:
+      `<p>A pilot just submitted a CashApp lifetime request.</p>` +
+      `<ul>` +
+      `<li><strong>User:</strong> ${safeUser}</li>` +
+      `<li><strong>CashApp:</strong> <code>${safeUsername}</code></li>` +
+      `</ul>` +
+      `<p>Verify the payment in CashApp, then ` +
+      `<a href="https://fly.witus.online/admin/cashapp">activate via the admin queue</a>.</p>` +
+      `<p style="color:#666;font-size:12px">24-hour SLA — confirm within a day.</p>`,
+  });
+}
+
+// v3 §5 — admin gets one daily-or-so summary of CashApp requests still
+// pending past 20h so the 24h SLA never silently slips. Recipient is
+// ADMIN_NOTIFY_EMAIL (defaults to bam@awews.com).
+export interface PendingCashAppRow {
+  email: string;
+  cashappUsername: string | null;
+  ageHours: number;
+}
+
+export async function sendAdminCashAppReminder(input: {
+  to: string;
+  rows: PendingCashAppRow[];
+}): Promise<void> {
+  if (input.rows.length === 0) return;
+
+  const oldest = input.rows[0]; // caller orders newest-first or oldest-first; we just take row[0] for the subject hint
+  const summary = input.rows.length === 1 ? "1 request" : `${input.rows.length} requests`;
+  const subject = `⚠️ ${summary} pending CashApp activation (oldest ${oldest.ageHours}h)`;
+
+  const lines = input.rows
+    .map(
+      (r) =>
+        `  • ${r.email}  ${r.cashappUsername ?? "(no username)"}  ${r.ageHours}h ago`,
+    )
+    .join("\n");
+
+  const html =
+    `<p>${escapeHtml(summary)} pending CashApp activation past the 24-hour SLA window:</p>` +
+    `<ul>` +
+    input.rows
+      .map(
+        (r) =>
+          `<li><strong>${escapeHtml(r.email)}</strong> — <code>${escapeHtml(
+            r.cashappUsername ?? "(no username)",
+          )}</code> — ${r.ageHours}h ago</li>`,
+      )
+      .join("") +
+    `</ul>` +
+    `<p><a href="https://fly.witus.online/admin/cashapp">Open the admin queue</a> to verify.</p>`;
+
+  await sendEmail({
+    to: input.to,
+    subject,
+    text:
+      `${summary} pending CashApp activation past the 24-hour SLA window:\n\n` +
+      `${lines}\n\n` +
+      `Open the admin queue: https://fly.witus.online/admin/cashapp`,
+    html,
+  });
+}

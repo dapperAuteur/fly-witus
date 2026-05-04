@@ -35,6 +35,13 @@ const schema = z.object({
   NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET: z.string().optional(),
 
   CRON_SECRET: z.string().optional(),
+
+  // WitUS Inbox push (witus-inbox repo). When set, admin alerts also
+  // fire to the cross-product Inbox bus, which routes high-priority
+  // events to SMS via mobile-text-alerts.
+  INBOX_INGEST_URL: z.string().url().optional(),
+  INBOX_INGEST_SECRET: z.string().optional(),
+  INBOX_SOURCE_SLUG: z.string().optional(),
 });
 
 const isProd = process.env.NODE_ENV === "production";
@@ -86,6 +93,10 @@ const input = {
   NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET: process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET,
 
   CRON_SECRET: process.env.CRON_SECRET,
+
+  INBOX_INGEST_URL: process.env.INBOX_INGEST_URL,
+  INBOX_INGEST_SECRET: process.env.INBOX_INGEST_SECRET,
+  INBOX_SOURCE_SLUG: process.env.INBOX_SOURCE_SLUG,
 };
 
 const parsed = schema.safeParse(input);
@@ -112,3 +123,6 @@ export const hasCloudinary = Boolean(
   env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME && env.CLOUDINARY_API_KEY && env.CLOUDINARY_API_SECRET,
 );
 export const hasCron = Boolean(env.CRON_SECRET);
+export const hasInbox = Boolean(
+  env.INBOX_INGEST_URL && env.INBOX_INGEST_SECRET && env.INBOX_SOURCE_SLUG,
+);

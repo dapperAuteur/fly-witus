@@ -59,14 +59,17 @@ interface NoaaPointResponse {
   properties?: { forecast?: string };
 }
 
+interface CensusZctaEntry {
+  ZCTA5?: string;
+  GEOID?: string;
+}
+
 interface CensusGeographyResponse {
   result?: {
-    geographies?: {
-      "ZIP Code Tabulation Areas"?: Array<{
-        ZCTA5?: string;
-        GEOID?: string;
-      }>;
-    };
+    // Key shape: "{vintage-year} Census ZIP Code Tabulation Areas" — e.g.
+    // "2020 Census ZIP Code Tabulation Areas". Year prefix changes when
+    // Census rolls a new vintage; we match by regex below to stay robust.
+    geographies?: Record<string, CensusZctaEntry[]>;
   };
 }
 
@@ -143,18 +146,28 @@ export async function fetchWeatherForZip(zip: string): Promise<WeatherSnapshot |
 }
 
 export async function reverseLookupZip(coords: LatLon): Promise<string | null> {
+  // Census actually names the layer "{year} Census ZIP Code Tabulation Areas"
+  // (currently 2020). Pass that exact name in the request; if the layers
+  // param is unrecognized Census silently falls back to a default layer
+  // set that EXCLUDES ZCTAs — that was the original bug.
   const params = new URLSearchParams({
     x: String(coords.lon),
     y: String(coords.lat),
     benchmark: "Public_AR_Current",
     vintage: "Current_Current",
-    layers: "ZIP Code Tabulation Areas",
+    layers: "2020 Census ZIP Code Tabulation Areas",
     format: "json",
   });
   const data = await fetchJson<CensusGeographyResponse>(
     `${CENSUS_GEOCODER}?${params.toString()}`,
   );
-  const match = data?.result?.geographies?.["ZIP Code Tabulation Areas"]?.[0];
+  // Match by regex so a future vintage bump (2030 Census ZCTA, etc.)
+  // doesn't break parsing — only the request layer name needs updating.
+  const geographies = data?.result?.geographies ?? {};
+  const zctaList = Object.entries(geographies).find(([key]) =>
+    /ZIP Code Tabulation Areas/i.test(key),
+  )?.[1];
+  const match = zctaList?.[0];
   const code = match?.ZCTA5 ?? match?.GEOID;
   if (!code || !/^\d{5}$/.test(code)) return null;
   return code;

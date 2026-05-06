@@ -21,10 +21,14 @@ const OWNER_USER_ID = process.env.PRODUCT_OWNER_USER_ID;
  * before anything goes live. Override only for time-sensitive triggers
  * like "going live" where the post must fire immediately.
  */
-// Diagnostic logs gated behind OUTBOX_TRIGGER_DEBUG=true. Stays quiet by
-// default; flip the env var on whichever env you're diagnosing to surface
-// which gate trips. Logs metadata only — never caption/URLs/secret/signature.
-const debug = () => process.env.OUTBOX_TRIGGER_DEBUG === "true";
+// Diagnostic logging strategy:
+//   - Admin (matches OWNER_USER_ID) saves: ALWAYS log entry + gate-skip
+//     reasons + after() lifecycle. Admin is the only person who needs to
+//     see the diagnostic during smoke and shouldn't have to flip a switch.
+//   - Non-admin saves: only log when OUTBOX_TRIGGER_DEBUG=true, since
+//     once the BAM-only gate is removed (post-smoke) every non-admin save
+//     would otherwise spam logs.
+// Either way: metadata only — never caption/URLs/secret/signature.
 
 export function fireOutboxDrafts(args: {
   triggerUserId: string;
@@ -35,13 +39,17 @@ export function fireOutboxDrafts(args: {
   scheduledAt?: Date;
   asDraft?: boolean;
 }) {
-  if (debug()) {
+  const isAdmin = args.triggerUserId === OWNER_USER_ID;
+  const debug = process.env.OUTBOX_TRIGGER_DEBUG === "true";
+  const shouldLog = isAdmin || debug;
+
+  if (shouldLog) {
     console.log("[outbox-trigger] called", {
       external_ref_base: args.externalRefBase,
       user_prefix: args.triggerUserId.slice(0, 6),
+      is_admin: isAdmin,
       enabled: process.env.OUTBOX_TRIGGER_ENABLED === "true",
       owner_set: Boolean(OWNER_USER_ID),
-      owner_match: args.triggerUserId === OWNER_USER_ID,
       url: process.env.OUTBOX_INGEST_URL ?? "(unset)",
       slug: process.env.OUTBOX_SOURCE_SLUG ?? "(unset)",
       secret_set: Boolean(process.env.OUTBOX_INGEST_SECRET),
@@ -49,11 +57,11 @@ export function fireOutboxDrafts(args: {
   }
 
   if (process.env.OUTBOX_TRIGGER_ENABLED !== "true") {
-    if (debug()) console.log("[outbox-trigger] skipped: kill-switch off");
+    if (shouldLog) console.log("[outbox-trigger] skipped: kill-switch off");
     return;
   }
-  if (args.triggerUserId !== OWNER_USER_ID) {
-    if (debug()) {
+  if (!isAdmin) {
+    if (debug) {
       console.log("[outbox-trigger] skipped: triggerUserId !== OWNER_USER_ID", {
         user_prefix: args.triggerUserId.slice(0, 6),
         owner_prefix: OWNER_USER_ID?.slice(0, 6) ?? "(unset)",
@@ -62,22 +70,23 @@ export function fireOutboxDrafts(args: {
     return;
   }
 
+  // Past gates → user is admin → always log from here on.
   const platforms = args.platforms ?? (["twitter", "bluesky", "linkedin"] as const);
   const placeholderTime =
     args.scheduledAt ??
     new Date(Date.now() + 7 * 24 * 60 * 60_000);
   const asDraft = args.asDraft ?? true;
 
-  if (debug()) {
-    console.log("[outbox-trigger] gates passed, scheduling after()", {
-      platforms,
-      external_ref_base: args.externalRefBase,
-      as_draft: asDraft,
-    });
-  }
+  console.log("[outbox-trigger] gates passed, scheduling after()", {
+    platforms,
+    external_ref_base: args.externalRefBase,
+    as_draft: asDraft,
+  });
 
   after(async () => {
-    if (debug()) console.log("[outbox-trigger] after() running");
+    console.log("[outbox-trigger] after() running", {
+      external_ref_base: args.externalRefBase,
+    });
     for (const platform of platforms) {
       try {
         const result = await sendToOutbox({
@@ -100,7 +109,7 @@ export function fireOutboxDrafts(args: {
             external_ref_base: args.externalRefBase,
             http_status: result.status,
           });
-        } else if (debug()) {
+        } else {
           console.log("[outbox-trigger] sent", {
             platform,
             external_ref_base: args.externalRefBase,

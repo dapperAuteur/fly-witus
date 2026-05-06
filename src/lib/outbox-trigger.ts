@@ -21,6 +21,11 @@ const OWNER_USER_ID = process.env.PRODUCT_OWNER_USER_ID;
  * before anything goes live. Override only for time-sensitive triggers
  * like "going live" where the post must fire immediately.
  */
+// Diagnostic logs gated behind OUTBOX_TRIGGER_DEBUG=true. Stays quiet by
+// default; flip the env var on whichever env you're diagnosing to surface
+// which gate trips. Logs metadata only — never caption/URLs/secret/signature.
+const debug = () => process.env.OUTBOX_TRIGGER_DEBUG === "true";
+
 export function fireOutboxDrafts(args: {
   triggerUserId: string;
   externalRefBase: string;
@@ -30,8 +35,32 @@ export function fireOutboxDrafts(args: {
   scheduledAt?: Date;
   asDraft?: boolean;
 }) {
-  if (process.env.OUTBOX_TRIGGER_ENABLED !== "true") return;
-  if (args.triggerUserId !== OWNER_USER_ID) return;
+  if (debug()) {
+    console.log("[outbox-trigger] called", {
+      external_ref_base: args.externalRefBase,
+      user_prefix: args.triggerUserId.slice(0, 6),
+      enabled: process.env.OUTBOX_TRIGGER_ENABLED === "true",
+      owner_set: Boolean(OWNER_USER_ID),
+      owner_match: args.triggerUserId === OWNER_USER_ID,
+      url: process.env.OUTBOX_INGEST_URL ?? "(unset)",
+      slug: process.env.OUTBOX_SOURCE_SLUG ?? "(unset)",
+      secret_set: Boolean(process.env.OUTBOX_INGEST_SECRET),
+    });
+  }
+
+  if (process.env.OUTBOX_TRIGGER_ENABLED !== "true") {
+    if (debug()) console.log("[outbox-trigger] skipped: kill-switch off");
+    return;
+  }
+  if (args.triggerUserId !== OWNER_USER_ID) {
+    if (debug()) {
+      console.log("[outbox-trigger] skipped: triggerUserId !== OWNER_USER_ID", {
+        user_prefix: args.triggerUserId.slice(0, 6),
+        owner_prefix: OWNER_USER_ID?.slice(0, 6) ?? "(unset)",
+      });
+    }
+    return;
+  }
 
   const platforms = args.platforms ?? (["twitter", "bluesky", "linkedin"] as const);
   const placeholderTime =
@@ -39,27 +68,55 @@ export function fireOutboxDrafts(args: {
     new Date(Date.now() + 7 * 24 * 60 * 60_000);
   const asDraft = args.asDraft ?? true;
 
+  if (debug()) {
+    console.log("[outbox-trigger] gates passed, scheduling after()", {
+      platforms,
+      external_ref_base: args.externalRefBase,
+      as_draft: asDraft,
+    });
+  }
+
   after(async () => {
+    if (debug()) console.log("[outbox-trigger] after() running");
     for (const platform of platforms) {
-      const result = await sendToOutbox({
-        outboxUrl: process.env.OUTBOX_INGEST_URL!,
-        sourceSlug: process.env.OUTBOX_SOURCE_SLUG!,
-        hmacSecret: process.env.OUTBOX_INGEST_SECRET!,
-        submission: {
-          external_ref: `${args.externalRefBase}-${platform}`,
-          platform,
-          caption: args.caption,
-          media_urls: args.mediaUrls ?? [],
-          scheduled_at: placeholderTime.toISOString(),
-          as_draft: asDraft,
-        },
-      });
-      if (!result.ok) {
-        console.error("[outbox-trigger] failed", {
+      try {
+        const result = await sendToOutbox({
+          outboxUrl: process.env.OUTBOX_INGEST_URL!,
+          sourceSlug: process.env.OUTBOX_SOURCE_SLUG!,
+          hmacSecret: process.env.OUTBOX_INGEST_SECRET!,
+          submission: {
+            external_ref: `${args.externalRefBase}-${platform}`,
+            platform,
+            caption: args.caption,
+            media_urls: args.mediaUrls ?? [],
+            scheduled_at: placeholderTime.toISOString(),
+            as_draft: asDraft,
+          },
+        });
+        if (!result.ok) {
+          console.error("[outbox-trigger] failed", {
+            source: process.env.OUTBOX_SOURCE_SLUG,
+            platform,
+            external_ref_base: args.externalRefBase,
+            http_status: result.status,
+          });
+        } else if (debug()) {
+          console.log("[outbox-trigger] sent", {
+            platform,
+            external_ref_base: args.externalRefBase,
+            http_status: result.status,
+            record_status: result.recordStatus,
+          });
+        }
+      } catch (err) {
+        // sendToOutbox throws on connect errors (DNS / ECONNREFUSED / TLS) —
+        // without this catch, after()'s rejected promise is silent in some
+        // runtimes. Log metadata only.
+        console.error("[outbox-trigger] threw", {
           source: process.env.OUTBOX_SOURCE_SLUG,
           platform,
           external_ref_base: args.externalRefBase,
-          http_status: result.status,
+          error: err instanceof Error ? err.message : String(err),
         });
       }
     }

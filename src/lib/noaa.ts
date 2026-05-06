@@ -27,6 +27,14 @@
 
 const ZIPPOPOTAM = "https://api.zippopotam.us/us";
 const NOAA_POINTS = "https://api.weather.gov/points";
+// Reverse geocode latlon → ZCTA (5-digit ZIP-like statistical area). Census's
+// ZIP→latlon path needs a street address, but the latlon→ZCTA path through
+// the geographies endpoint is straightforward — single GET, JSON response.
+// ZCTAs aren't 1:1 with USPS ZIPs (≈1% of cases differ) but match the
+// existing Zippopotam tolerance and are sufficient for "where is the user
+// roughly" + downstream weather lookup.
+const CENSUS_GEOCODER =
+  "https://geocoding.geo.census.gov/geocoder/geographies/coordinates";
 const FETCH_TIMEOUT_MS = 12_000;
 
 export interface LatLon {
@@ -49,6 +57,17 @@ interface ZippopotamResponse {
 
 interface NoaaPointResponse {
   properties?: { forecast?: string };
+}
+
+interface CensusGeographyResponse {
+  result?: {
+    geographies?: {
+      "ZIP Code Tabulation Areas"?: Array<{
+        ZCTA5?: string;
+        GEOID?: string;
+      }>;
+    };
+  };
 }
 
 interface NoaaForecastResponse {
@@ -121,4 +140,22 @@ export async function fetchWeatherForZip(zip: string): Promise<WeatherSnapshot |
   const coords = await lookupZip(zip);
   if (!coords) return null;
   return fetchWeatherSnapshot(coords);
+}
+
+export async function reverseLookupZip(coords: LatLon): Promise<string | null> {
+  const params = new URLSearchParams({
+    x: String(coords.lon),
+    y: String(coords.lat),
+    benchmark: "Public_AR_Current",
+    vintage: "Current_Current",
+    layers: "ZIP Code Tabulation Areas",
+    format: "json",
+  });
+  const data = await fetchJson<CensusGeographyResponse>(
+    `${CENSUS_GEOCODER}?${params.toString()}`,
+  );
+  const match = data?.result?.geographies?.["ZIP Code Tabulation Areas"]?.[0];
+  const code = match?.ZCTA5 ?? match?.GEOID;
+  if (!code || !/^\d{5}$/.test(code)) return null;
+  return code;
 }

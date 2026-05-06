@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { CHECKLIST_SECTIONS, type ChecklistItem } from '@/lib/checklist-data';
 import { downloadMissionPdf, type Photo } from '@/lib/pdf';
 import { useSession, signOut } from '@/lib/auth-client';
-import { fetchWeatherSnapshot, fetchWeatherForZip } from '@/lib/noaa';
+import { fetchWeatherSnapshot, fetchWeatherForZip, reverseLookupZip } from '@/lib/noaa';
 import {
   flushOutbox,
   listMissions,
@@ -543,13 +543,21 @@ const UASChecklistApp: React.FC = () => {
     setWeatherError(null);
     navigator.geolocation.getCurrentPosition(
       async (position) => {
-        const { latitude, longitude } = position.coords;
-        const snapshot = await fetchWeatherSnapshot({ lat: latitude, lon: longitude });
+        const coords = {
+          lat: position.coords.latitude,
+          lon: position.coords.longitude,
+        };
+        // Run weather + reverse-ZIP in parallel; failures are independent.
+        const [snapshot, zcta] = await Promise.all([
+          fetchWeatherSnapshot(coords),
+          reverseLookupZip(coords),
+        ]);
         if (snapshot) {
           setWeather(snapshot);
         } else {
           setWeatherError("Couldn't reach NOAA. Try ZIP lookup or enter weather manually.");
         }
+        if (zcta) setZipCode(zcta);
         setLoadingWeather(false);
       },
       () => {

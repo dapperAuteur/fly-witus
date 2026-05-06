@@ -161,9 +161,18 @@ function groupBy<T, K>(items: T[], key: (item: T) => K): Map<K, T[]> {
   return map;
 }
 
-// PG unique-violation code — drizzle re-throws the underlying pg error.
+// PG unique-violation code 23505. Drizzle wraps the underlying pg error
+// in an outer Error with `cause` set to the original — so the code lives
+// at `err.cause.code`, not `err.code`. Pre-2026-05-06 this helper only
+// looked at the outer `code`, which is undefined on the wrapper, so
+// duplicates fell through to `throw err` and Next mapped them to 500
+// instead of the intended 409. Walk one level of `cause` to handle both
+// shapes (raw pg error and drizzle-wrapped).
 function isUniqueViolation(err: unknown): boolean {
-  return Boolean(
-    err && typeof err === "object" && "code" in err && (err as { code: string }).code === "23505",
-  );
+  if (!err || typeof err !== "object") return false;
+  const direct = (err as { code?: unknown }).code;
+  if (direct === "23505") return true;
+  const cause = (err as { cause?: unknown }).cause;
+  if (!cause || typeof cause !== "object") return false;
+  return (cause as { code?: unknown }).code === "23505";
 }

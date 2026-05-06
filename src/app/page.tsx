@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { Suspense, useState, useEffect, useMemo } from 'react';
 import { Analytics } from "@vercel/analytics/next"
 import Image from 'next/image';
 import Link from 'next/link';
@@ -10,13 +10,16 @@ import { useSession, signOut } from '@/lib/auth-client';
 import { fetchWeatherSnapshot, fetchWeatherForZip, reverseLookupZip } from '@/lib/noaa';
 import {
   flushOutbox,
+  getMission,
   listMissions,
   pendingCount,
   saveMission,
+  updateMission,
   warmCacheFromServer,
 } from '@/lib/missions-store';
 import { useOnlineStatus } from '@/hooks/use-online-status';
 import { PhotoUploadButton } from './_components/photo-upload';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 // --- TYPE DEFINITIONS ---
 interface AircraftProfile {
@@ -375,7 +378,12 @@ const FlightLogSection: React.FC<{
 
 // --- MAIN COMPONENT ---
 const UASChecklistApp: React.FC = () => {
-  const [missionNumber] = useState<string>(generateMissionNumber());
+  const [missionNumber, setMissionNumber] = useState<string>(generateMissionNumber());
+  // When set, Save calls PUT /api/missions/[id] instead of POST. The
+  // dashboard's mission-edit affordance navigates here with ?edit=<id>;
+  // the effect below loads the mission and hydrates form state.
+  const [editingMissionId, setEditingMissionId] = useState<string | null>(null);
+  const [editLoadError, setEditLoadError] = useState<string | null>(null);
   const [pilotName, setPilotName] = useState<string>('');
   const [location, setLocation] = useState<string>('');
   const [aircraftType, setAircraftType] = useState<string>('');
@@ -401,6 +409,39 @@ const UASChecklistApp: React.FC = () => {
   const isOnline = useOnlineStatus();
   const authed = Boolean(session?.user);
   const [pendingSyncCount, setPendingSyncCount] = useState<number>(0);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const editIdFromUrl = searchParams.get('edit');
+
+  // Edit-mode hydration: if /?edit=<id> and signed in, fetch the mission
+  // and populate every form field. Sets editingMissionId so Save uses PUT.
+  useEffect(() => {
+    if (!editIdFromUrl || !authed || sessionLoading) return;
+    let cancelled = false;
+    (async () => {
+      setEditLoadError(null);
+      const m = await getMission(editIdFromUrl);
+      if (cancelled) return;
+      if (!m) {
+        setEditLoadError(`Couldn't load mission ${editIdFromUrl}.`);
+        return;
+      }
+      setMissionNumber(m.missionNumber);
+      setPilotName(m.pilotName);
+      setLocation(m.location);
+      setAircraftType(m.aircraftType);
+      setRpCert(m.rpCert);
+      setSelectedProfileId(m.profileId ?? '');
+      setCompleted(m.completed);
+      setWeather(m.weather);
+      setFlightRecords(m.flightRecords);
+      setPhotos(m.photos ?? []);
+      setEditingMissionId(editIdFromUrl);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [editIdFromUrl, authed, sessionLoading]);
 
   // Load draft + aircraft profiles on mount (these stay localStorage-only).
   useEffect(() => {
@@ -613,14 +654,30 @@ const UASChecklistApp: React.FC = () => {
     };
 
     // missions-store handles auth-aware persistence: localStorage for
-    // anonymous, /api/missions + IDB outbox for signed-in users.
-    await saveMission(authed, missionLog);
-    alert(`Mission ${missionNumber} saved!`);
+    // anonymous, /api/missions + IDB outbox for signed-in users. Edit
+    // mode (set by ?edit=<id>) routes to PUT directly — online-only.
+    if (editingMissionId) {
+      try {
+        await updateMission(editingMissionId, missionLog);
+        alert(`Mission ${missionNumber} updated!`);
+      } catch (err) {
+        alert(`Update failed: ${err instanceof Error ? err.message : String(err)}`);
+        return;
+      }
+    } else {
+      await saveMission(authed, missionLog);
+      alert(`Mission ${missionNumber} saved!`);
+    }
 
     const refreshed = await listMissions(authed);
     setRecentMissions(refreshed);
     if (authed) {
       setPendingSyncCount(await pendingCount());
+    }
+    setEditingMissionId(null);
+    if (editIdFromUrl) {
+      // Drop ?edit so a refresh doesn't re-hydrate the now-saved mission.
+      router.replace('/');
     }
     resetForm();
   };
@@ -743,6 +800,12 @@ const UASChecklistApp: React.FC = () => {
           ) : session ? (
             <div className="flex items-center gap-3">
               <span className="text-sm text-gray-600 hidden sm:inline">{session.user.email}</span>
+              <Link
+                href="/dashboard"
+                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm font-semibold transition"
+              >
+                Dashboard
+              </Link>
               <button
                 onClick={() => signOut()}
                 className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm font-semibold transition"
@@ -759,6 +822,29 @@ const UASChecklistApp: React.FC = () => {
             </Link>
           )}
         </div>
+
+        {(editingMissionId || editLoadError) && (
+          <div className="mb-6 p-3 rounded-lg border border-amber-300 bg-amber-50 text-sm">
+            {editLoadError ? (
+              <span className="text-red-700">{editLoadError}</span>
+            ) : (
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-amber-900">
+                  Editing mission <strong>{missionNumber}</strong>. Save will update the existing record.
+                </span>
+                <button
+                  onClick={() => {
+                    setEditingMissionId(null);
+                    router.replace('/');
+                  }}
+                  className="text-amber-900 underline hover:no-underline text-sm"
+                >
+                  Cancel edit
+                </button>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Header */}
         <header className="mb-8 text-center">
@@ -1113,4 +1199,12 @@ const UASChecklistApp: React.FC = () => {
   );
 };
 
-export default UASChecklistApp;
+// useSearchParams requires a Suspense boundary so the static shell can
+// render while the dynamic params load on the client.
+export default function Page() {
+  return (
+    <Suspense fallback={null}>
+      <UASChecklistApp />
+    </Suspense>
+  );
+}

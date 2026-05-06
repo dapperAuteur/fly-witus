@@ -278,6 +278,36 @@ export async function saveMission(authed: boolean, mission: MissionLog): Promise
   return pending;
 }
 
+// Edit-existing flow used by the dashboard. Online-only — edits don't
+// queue offline because the dashboard's edit affordance is itself online,
+// and PUT against an unsynced row would fail with 404. Throws on any
+// non-2xx so the UI can surface the error rather than silently caching
+// an out-of-date row.
+export async function updateMission(missionId: string, mission: MissionLog): Promise<MissionLog> {
+  const payload = localToApi(mission);
+  const res = await fetch(`/api/missions/${missionId}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`PUT /api/missions/${missionId} failed: ${res.status} ${text}`);
+  }
+  const json = (await res.json()) as { mission: ApiMission };
+  const synced = apiToLocal(json.mission);
+  await cacheMission(localToCached(synced, "synced"));
+  return synced;
+}
+
+// Used by the edit flow: load a single mission for hydration.
+export async function getMission(missionId: string): Promise<MissionLog | null> {
+  const res = await fetch(`/api/missions/${missionId}`, { cache: "no-store" });
+  if (!res.ok) return null;
+  const json = (await res.json()) as { mission: ApiMission };
+  return apiToLocal(json.mission);
+}
+
 export async function flushOutbox(): Promise<{ flushed: number; remaining: number }> {
   if (typeof navigator !== "undefined" && !navigator.onLine) {
     const remaining = await outboxCount().catch(() => 0);

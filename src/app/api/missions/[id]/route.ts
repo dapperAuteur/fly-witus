@@ -6,6 +6,8 @@ import { flights, missionPhotos, missions } from "@/db/schema/missions";
 import { requireUser } from "@/lib/api-auth";
 import { missionInputSchema } from "@/lib/missions-api";
 import { loadMissionForUser } from "@/lib/missions-queries";
+import { buildCaptionFromMission } from "@/lib/outbox-mission-caption";
+import { fireOutboxDrafts } from "@/lib/outbox-trigger";
 
 interface Params {
   params: Promise<{ id: string }>;
@@ -108,6 +110,17 @@ export async function PUT(req: Request, ctx: Params) {
   });
 
   const updated = await loadMissionForUser(id, userOrRes.id);
+
+  if (updated) {
+    fireOutboxDrafts({
+      triggerUserId: userOrRes.id,
+      externalRefBase: `mission-${updated.id}`,
+      caption: buildCaptionFromMission(updated),
+      mediaUrls: updated.photos.map((p) => p.url),
+      platforms: ["linkedin"],
+    });
+  }
+
   return NextResponse.json({ mission: updated });
 }
 

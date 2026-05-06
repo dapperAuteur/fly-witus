@@ -6,6 +6,8 @@ import { flights, missionPhotos, missions } from "@/db/schema/missions";
 import { requireUser } from "@/lib/api-auth";
 import { missionInputSchema } from "@/lib/missions-api";
 import { loadMissionForUser } from "@/lib/missions-queries";
+import { buildCaptionFromMission } from "@/lib/outbox-mission-caption";
+import { fireOutboxDrafts } from "@/lib/outbox-trigger";
 
 // Node runtime — pg/drizzle require it. Cloud sync only — anonymous users
 // stay on localStorage.
@@ -134,6 +136,17 @@ export async function POST(req: Request) {
   // Read back the canonical row so the client gets server-generated
   // timestamps/IDs in one round trip.
   const created = await loadMissionForUser(missionId, userOrRes.id);
+
+  if (created) {
+    fireOutboxDrafts({
+      triggerUserId: userOrRes.id,
+      externalRefBase: `mission-${created.id}`,
+      caption: buildCaptionFromMission(created),
+      mediaUrls: created.photos.map((p) => p.url),
+      platforms: ["linkedin"],
+    });
+  }
+
   return NextResponse.json({ mission: created }, { status: 201 });
 }
 

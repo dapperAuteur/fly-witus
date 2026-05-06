@@ -9,12 +9,15 @@ const OWNER_USER_ID = process.env.PRODUCT_OWNER_USER_ID;
  *   - what triggered (caption + external_ref + platforms)
  *   - whether the trigger should fire at all (passes triggerUserId)
  *
- * Three layered gates run BEFORE any network call:
- *   1. Master kill-switch (OUTBOX_TRIGGER_ENABLED env) — BAM can mute the
- *      whole app instantly without a code deploy.
- *   2. BAM-only smoke gate — only triggers from BAM's account fire while
- *      we're proving the integration. Removed (replaced by per-user
- *      opt-in) after BAM confirms smoke.
+ * Gates apply to NON-ADMIN saves only. Admin (matches OWNER_USER_ID) always
+ * fires — admin is the operator running smoke and shouldn't have to flip
+ * env vars to publish about their own product activity.
+ *
+ *   1. Master kill-switch (OUTBOX_TRIGGER_ENABLED env) — mutes non-admin
+ *      traffic during a runaway / viral campaign / shipped-bug scenario.
+ *      Has no effect on admin saves; admin restraint is "stop saving."
+ *   2. BAM-only smoke gate — non-admin saves are rejected during smoke.
+ *      Replaced by per-user opt-in (gate 3) after smoke completes.
  *   3. Per-user opt-in (later) — see plans/future/per-user-opt-in.md.
  *
  * `as_draft: true` always — operator reviews + schedules from /outbox/[id]
@@ -56,8 +59,13 @@ export function fireOutboxDrafts(args: {
     });
   }
 
-  if (process.env.OUTBOX_TRIGGER_ENABLED !== "true") {
-    if (shouldLog) console.log("[outbox-trigger] skipped: kill-switch off");
+  // Kill-switch ONLY mutes non-admin traffic. Admin fires regardless — once
+  // per-user opt-in replaces the BAM-only gate (post-smoke), the kill-switch
+  // is for muting that opted-in non-admin traffic during runaway / viral
+  // campaign / shipped-bug scenarios. Admin restraint is "stop saving" not
+  // an env var.
+  if (!isAdmin && process.env.OUTBOX_TRIGGER_ENABLED !== "true") {
+    if (shouldLog) console.log("[outbox-trigger] skipped: kill-switch off (non-admin)");
     return;
   }
   if (!isAdmin) {

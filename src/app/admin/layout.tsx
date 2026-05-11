@@ -51,6 +51,9 @@ export default async function AdminLayout({
             <Link href="/admin/lifetime" className="hover:text-amber-300">
               Lifetime
             </Link>
+            <Link href="/admin/promos" className="hover:text-amber-300">
+              Promos
+            </Link>
             <Link href="/admin/groups" className="hover:text-amber-300">
               Groups
             </Link>

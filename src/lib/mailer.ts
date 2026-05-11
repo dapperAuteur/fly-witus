@@ -206,6 +206,58 @@ export async function sendAdminCashAppNewRequestEmail(input: {
   });
 }
 
+// v3 §3 — fires when a claimant links a completed mission to a flight
+// request. Requester gets the heads-up so they can pull the asset (BVC
+// footage, etc.) without having to poll the group feed.
+export async function sendFlightRequestCompletedEmail(input: {
+  to: string;
+  requesterName: string;
+  claimantName: string;
+  groupName: string;
+  requestTitle: string;
+  missionLocation: string | null;
+  missionDate: Date;
+  missionDurationLabel?: string | null;
+  groupId: string;
+}): Promise<void> {
+  const safeReq = escapeHtml(input.requesterName);
+  const safeClaim = escapeHtml(input.claimantName);
+  const safeGroup = escapeHtml(input.groupName);
+  const safeTitle = escapeHtml(input.requestTitle);
+  const safeLoc = escapeHtml(input.missionLocation ?? "Unknown location");
+  const dateLabel = input.missionDate.toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+  const url = `https://fly.witus.online/groups/${input.groupId}`;
+  await sendEmail({
+    to: input.to,
+    subject: `Flight request completed — ${input.requestTitle}`,
+    text:
+      `${input.claimantName} has completed your flight request and shared the mission with ${input.groupName}.\n\n` +
+      `Request: ${input.requestTitle}\n` +
+      `Mission: ${input.missionLocation ?? "Unknown location"}\n` +
+      `Date:    ${dateLabel}\n` +
+      (input.missionDurationLabel ? `Duration: ${input.missionDurationLabel}\n` : "") +
+      `\nView the shared mission: ${url}\n\n` +
+      `— Fly WitUS`,
+    html:
+      `<p>Hi ${safeReq},</p>` +
+      `<p><strong>${safeClaim}</strong> has completed your flight request and shared the mission with <strong>${safeGroup}</strong>.</p>` +
+      `<ul>` +
+      `<li><strong>Request:</strong> ${safeTitle}</li>` +
+      `<li><strong>Mission:</strong> ${safeLoc}</li>` +
+      `<li><strong>Date:</strong> ${escapeHtml(dateLabel)}</li>` +
+      (input.missionDurationLabel
+        ? `<li><strong>Duration:</strong> ${escapeHtml(input.missionDurationLabel)}</li>`
+        : "") +
+      `</ul>` +
+      `<p><a href="${url}">View the shared mission</a></p>` +
+      `<p>— Fly WitUS</p>`,
+  });
+}
+
 // v3 §5 — admin gets one daily-or-so summary of CashApp requests still
 // pending past 20h so the 24h SLA never silently slips. Recipient is
 // ADMIN_NOTIFY_EMAIL (defaults to bam@awews.com).

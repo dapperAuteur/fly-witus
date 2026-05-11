@@ -36,6 +36,13 @@
       "when": 1778465738328,
       "tag": "0004_eager_dreadnoughts",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1778466264245,
+      "tag": "0005_conscious_northstar",
+      "breakpoints": true
     }
   ]
 }

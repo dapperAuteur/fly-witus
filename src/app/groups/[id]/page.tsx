@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useSession } from "@/lib/auth-client";
 
-type Tab = "missions" | "members" | "invite";
+type Tab = "missions" | "requests" | "members" | "invite";
 
 interface GroupRow {
   id: string;
@@ -161,9 +161,12 @@ export default function GroupDashboardPage() {
         {data.sharedMissions.length === 1 ? "" : "s"}
       </p>
 
-      <div className="mt-6 border-b border-gray-200 flex gap-1">
+      <div className="mt-6 border-b border-gray-200 flex gap-1 flex-wrap">
         <TabButton active={tab === "missions"} onClick={() => setTab("missions")}>
           Shared Missions
+        </TabButton>
+        <TabButton active={tab === "requests"} onClick={() => setTab("requests")}>
+          Flight Requests
         </TabButton>
         <TabButton active={tab === "members"} onClick={() => setTab("members")}>
           Members
@@ -175,6 +178,9 @@ export default function GroupDashboardPage() {
 
       <div className="mt-6">
         {tab === "missions" && <MissionsTab shares={data.sharedMissions} />}
+        {tab === "requests" && (
+          <RequestsTab groupId={data.group.id} currentUserId={data.membership.userId} />
+        )}
         {tab === "members" && <MembersTab members={data.members} />}
         {tab === "invite" && (
           <InviteTab
@@ -185,6 +191,669 @@ export default function GroupDashboardPage() {
         )}
       </div>
     </main>
+  );
+}
+
+interface FlightRequestRow {
+  id: string;
+  title: string;
+  description: string;
+  missionType: string;
+  location: string | null;
+  targetDate: string | null;
+  priority: "low" | "medium" | "high";
+  status: "open" | "claimed" | "in_progress" | "completed" | "cancelled";
+  requestedById: string;
+  requesterName: string | null;
+  claimedById: string | null;
+  claimantName: string | null;
+  completedMissionId: string | null;
+  bvcEpisode: string | null;
+  wanderlearnCourseSlug: string | null;
+  partnerInstitution: string | null;
+  academicPurpose: string | null;
+  createdAt: string;
+}
+
+interface MyMissionOption {
+  id: string;
+  missionNumber: string;
+  timestamp: string;
+}
+
+function RequestsTab({
+  groupId,
+  currentUserId,
+}: {
+  groupId: string;
+  currentUserId: string;
+}) {
+  const [requests, setRequests] = useState<FlightRequestRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [showForm, setShowForm] = useState(false);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/groups/${groupId}/requests`);
+      if (!res.ok) throw new Error(`Failed (HTTP ${res.status})`);
+      const json = await res.json();
+      setRequests(json.requests ?? []);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setLoading(false);
+    }
+  }, [groupId]);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="text-sm uppercase tracking-wide text-gray-500">
+          {requests.length} request{requests.length === 1 ? "" : "s"}
+        </h2>
+        {!showForm && (
+          <button
+            onClick={() => setShowForm(true)}
+            className="px-3 py-1.5 bg-sky-600 text-white rounded text-sm font-semibold hover:bg-sky-700"
+          >
+            + New request
+          </button>
+        )}
+      </div>
+
+      {showForm && (
+        <NewRequestForm
+          groupId={groupId}
+          onCancel={() => setShowForm(false)}
+          onCreated={async () => {
+            setShowForm(false);
+            await load();
+          }}
+        />
+      )}
+
+      {error && <p className="text-sm text-red-600 mb-3">{error}</p>}
+      {loading && <div className="h-24 bg-gray-50 rounded animate-pulse" />}
+      {!loading && requests.length === 0 && !showForm && (
+        <p className="text-sm text-gray-500 italic">
+          No flight requests yet. Create one to ask a group member to fly a mission.
+        </p>
+      )}
+
+      <ul className="space-y-3 mt-3">
+        {requests.map((r) => (
+          <RequestCard
+            key={r.id}
+            request={r}
+            currentUserId={currentUserId}
+            groupId={groupId}
+            onChanged={load}
+          />
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function NewRequestForm({
+  groupId,
+  onCancel,
+  onCreated,
+}: {
+  groupId: string;
+  onCancel: () => void;
+  onCreated: () => void | Promise<void>;
+}) {
+  const [missionType, setMissionType] = useState("recreational");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setSubmitting(true);
+    setError(null);
+    const form = new FormData(e.currentTarget);
+    const targetDateRaw = (form.get("targetDate") as string).trim();
+    const payload: Record<string, unknown> = {
+      title: (form.get("title") as string).trim(),
+      description: (form.get("description") as string).trim(),
+      missionType,
+      location: (form.get("location") as string).trim() || undefined,
+      targetDate: targetDateRaw ? new Date(targetDateRaw).toISOString() : undefined,
+      priority: form.get("priority") as string,
+    };
+    if (missionType === "bvc_primary_source") {
+      payload.bvcEpisode = (form.get("bvcEpisode") as string).trim() || undefined;
+      payload.wanderlearnCourseSlug =
+        (form.get("wanderlearnCourseSlug") as string).trim() || undefined;
+      payload.partnerInstitution =
+        (form.get("partnerInstitution") as string).trim() || undefined;
+      payload.academicPurpose =
+        (form.get("academicPurpose") as string).trim() || undefined;
+    }
+    try {
+      const res = await fetch(`/api/groups/${groupId}/requests`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json.error ?? `Failed (HTTP ${res.status})`);
+      await onCreated();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <form
+      onSubmit={handleSubmit}
+      className="space-y-3 bg-sky-50 border border-sky-200 rounded-lg p-4 mb-4"
+    >
+      {error && <p className="text-sm text-red-600">{error}</p>}
+      <input
+        name="title"
+        required
+        maxLength={160}
+        placeholder="Title (e.g. BVC Episode 5 — Forest Footage)"
+        className="w-full px-3 py-2 border border-gray-300 rounded"
+      />
+      <textarea
+        name="description"
+        required
+        maxLength={2000}
+        rows={3}
+        placeholder="Describe what you need…"
+        className="w-full px-3 py-2 border border-gray-300 rounded"
+      />
+      <div className="grid grid-cols-2 gap-3">
+        <label>
+          <span className="block text-xs font-medium text-gray-700 mb-1">Mission type</span>
+          <select
+            value={missionType}
+            onChange={(e) => setMissionType(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded"
+          >
+            <option value="recreational">Recreational</option>
+            <option value="bvc_primary_source">BVC Primary Source</option>
+            <option value="commercial">Commercial</option>
+            <option value="test_maintenance">Test / Maintenance</option>
+          </select>
+        </label>
+        <label>
+          <span className="block text-xs font-medium text-gray-700 mb-1">Priority</span>
+          <select
+            name="priority"
+            defaultValue="medium"
+            className="w-full px-3 py-2 border border-gray-300 rounded"
+          >
+            <option value="low">Low</option>
+            <option value="medium">Medium</option>
+            <option value="high">High</option>
+          </select>
+        </label>
+      </div>
+      <input
+        name="location"
+        maxLength={200}
+        placeholder="Location (optional)"
+        className="w-full px-3 py-2 border border-gray-300 rounded"
+      />
+      <label>
+        <span className="block text-xs font-medium text-gray-700 mb-1">Target date (optional)</span>
+        <input
+          name="targetDate"
+          type="date"
+          className="w-full px-3 py-2 border border-gray-300 rounded"
+        />
+      </label>
+      {missionType === "bvc_primary_source" && (
+        <div className="space-y-2 border-t border-sky-200 pt-3">
+          <input
+            name="bvcEpisode"
+            maxLength={120}
+            placeholder="BVC episode (e.g. Episode 5 — Guayusa)"
+            className="w-full px-3 py-2 border border-gray-300 rounded"
+          />
+          <input
+            name="wanderlearnCourseSlug"
+            maxLength={120}
+            placeholder="Wanderlearn course slug"
+            className="w-full px-3 py-2 border border-gray-300 rounded"
+          />
+          <input
+            name="partnerInstitution"
+            maxLength={160}
+            placeholder="Partner institution"
+            className="w-full px-3 py-2 border border-gray-300 rounded"
+          />
+          <textarea
+            name="academicPurpose"
+            maxLength={500}
+            rows={2}
+            placeholder="Academic purpose"
+            className="w-full px-3 py-2 border border-gray-300 rounded"
+          />
+        </div>
+      )}
+      <div className="flex gap-2">
+        <button
+          type="submit"
+          disabled={submitting}
+          className="px-4 py-2 bg-sky-600 text-white rounded text-sm font-semibold disabled:opacity-50"
+        >
+          {submitting ? "Posting…" : "Post request"}
+        </button>
+        <button
+          type="button"
+          onClick={onCancel}
+          className="px-4 py-2 border border-gray-300 rounded text-sm font-semibold hover:bg-gray-50"
+        >
+          Cancel
+        </button>
+      </div>
+    </form>
+  );
+}
+
+function RequestCard({
+  request,
+  currentUserId,
+  groupId,
+  onChanged,
+}: {
+  request: FlightRequestRow;
+  currentUserId: string;
+  groupId: string;
+  onChanged: () => void | Promise<void>;
+}) {
+  const [showComplete, setShowComplete] = useState(false);
+  const [showComments, setShowComments] = useState(false);
+
+  const isRequester = request.requestedById === currentUserId;
+  const isClaimant = request.claimedById === currentUserId;
+
+  const post = async (path: string) => {
+    const res = await fetch(path, { method: "POST" });
+    if (!res.ok) {
+      const json = await res.json().catch(() => ({}));
+      alert(json.error ?? `Action failed (HTTP ${res.status})`);
+      return false;
+    }
+    await onChanged();
+    return true;
+  };
+
+  const cancel = async () => {
+    if (!confirm("Cancel this request?")) return;
+    const res = await fetch(`/api/groups/${groupId}/requests/${request.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "cancel" }),
+    });
+    if (!res.ok) {
+      const json = await res.json().catch(() => ({}));
+      alert(json.error ?? `Cancel failed (HTTP ${res.status})`);
+      return;
+    }
+    await onChanged();
+  };
+
+  const start = async () => {
+    const res = await fetch(`/api/groups/${groupId}/requests/${request.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "start" }),
+    });
+    if (!res.ok) {
+      const json = await res.json().catch(() => ({}));
+      alert(json.error ?? `Start failed (HTTP ${res.status})`);
+      return;
+    }
+    await onChanged();
+  };
+
+  return (
+    <li className="bg-white border border-gray-200 rounded-lg p-4">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="text-xs uppercase tracking-wide text-gray-500 mb-1">
+            <StatusBadge status={request.status} />{" "}
+            <PriorityBadge priority={request.priority} />
+          </div>
+          <h3 className="font-semibold text-lg">{request.title}</h3>
+          <p className="text-xs text-gray-500 mt-0.5">
+            Posted by {request.requesterName ?? "member"} on{" "}
+            {new Date(request.createdAt).toLocaleDateString()}
+          </p>
+        </div>
+      </div>
+      <p className="text-sm text-gray-700 mt-2 whitespace-pre-wrap">{request.description}</p>
+      <ul className="text-xs text-gray-600 mt-2 space-y-0.5">
+        {request.location && <li>📍 {request.location}</li>}
+        {request.targetDate && (
+          <li>📅 Target: {new Date(request.targetDate).toLocaleDateString()}</li>
+        )}
+        {request.missionType === "bvc_primary_source" && request.bvcEpisode && (
+          <li>✈ BVC: {request.bvcEpisode}</li>
+        )}
+        {request.claimantName && (
+          <li>
+            🤝 Claimed by {request.claimantName}
+            {isClaimant && " (you)"}
+          </li>
+        )}
+      </ul>
+
+      <div className="flex flex-wrap gap-2 mt-3">
+        {request.status === "open" && !isRequester && (
+          <button
+            onClick={() => post(`/api/groups/${groupId}/requests/${request.id}/claim`)}
+            className="px-3 py-1.5 bg-sky-600 text-white rounded text-sm font-semibold hover:bg-sky-700"
+          >
+            Claim this request
+          </button>
+        )}
+        {request.status === "claimed" && isClaimant && (
+          <button
+            onClick={start}
+            className="px-3 py-1.5 bg-amber-600 text-white rounded text-sm font-semibold hover:bg-amber-700"
+          >
+            Start mission
+          </button>
+        )}
+        {(request.status === "claimed" || request.status === "in_progress") &&
+          isClaimant && (
+            <button
+              onClick={() => setShowComplete((v) => !v)}
+              className="px-3 py-1.5 bg-green-600 text-white rounded text-sm font-semibold hover:bg-green-700"
+            >
+              {showComplete ? "Cancel" : "Complete request"}
+            </button>
+          )}
+        {(isRequester || request.status === "open") &&
+          request.status !== "completed" &&
+          request.status !== "cancelled" && (
+            <button
+              onClick={cancel}
+              className="px-3 py-1.5 border border-red-300 text-red-700 rounded text-sm font-semibold hover:bg-red-50"
+            >
+              Cancel request
+            </button>
+          )}
+        <button
+          onClick={() => setShowComments((v) => !v)}
+          className="px-3 py-1.5 border border-gray-300 rounded text-sm hover:bg-gray-50"
+        >
+          {showComments ? "Hide comments" : "Comments"}
+        </button>
+      </div>
+
+      {showComplete && (
+        <CompleteRequestForm
+          groupId={groupId}
+          requestId={request.id}
+          onDone={async () => {
+            setShowComplete(false);
+            await onChanged();
+          }}
+        />
+      )}
+
+      {showComments && <CommentsThread groupId={groupId} requestId={request.id} />}
+    </li>
+  );
+}
+
+function CompleteRequestForm({
+  groupId,
+  requestId,
+  onDone,
+}: {
+  groupId: string;
+  requestId: string;
+  onDone: () => void | Promise<void>;
+}) {
+  const [missions, setMissions] = useState<MyMissionOption[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/missions");
+        if (!res.ok) throw new Error(`Failed (HTTP ${res.status})`);
+        const json = await res.json();
+        if (!cancelled) {
+          setMissions(
+            (json.missions ?? []).map((m: MyMissionOption) => ({
+              id: m.id,
+              missionNumber: m.missionNumber,
+              timestamp: m.timestamp,
+            })),
+          );
+        }
+      } catch (err) {
+        if (!cancelled) setError(err instanceof Error ? err.message : String(err));
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setSubmitting(true);
+    setError(null);
+    const form = new FormData(e.currentTarget);
+    const missionId = form.get("missionId") as string;
+    if (!missionId) {
+      setError("Pick a mission");
+      setSubmitting(false);
+      return;
+    }
+    try {
+      const res = await fetch(`/api/groups/${groupId}/requests/${requestId}/complete`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ missionId }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json.error ?? `Complete failed (HTTP ${res.status})`);
+      await onDone();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="mt-3 pt-3 border-t border-gray-100">
+        <p className="text-sm text-gray-500">Loading your missions…</p>
+      </div>
+    );
+  }
+
+  if (missions.length === 0) {
+    return (
+      <div className="mt-3 pt-3 border-t border-gray-100">
+        <p className="text-sm text-gray-700">
+          You don&apos;t have any saved missions to link yet. Save a mission first, then come back.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <form
+      onSubmit={handleSubmit}
+      className="mt-3 pt-3 border-t border-gray-100 space-y-2"
+    >
+      {error && <p className="text-sm text-red-600">{error}</p>}
+      <select
+        name="missionId"
+        defaultValue=""
+        className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+      >
+        <option value="" disabled>
+          Pick the mission you flew for this request…
+        </option>
+        {missions.map((m) => (
+          <option key={m.id} value={m.id}>
+            Mission {m.missionNumber} · {new Date(m.timestamp).toLocaleDateString()}
+          </option>
+        ))}
+      </select>
+      <p className="text-xs text-gray-500">
+        Linking auto-shares this mission to the group and emails the requester.
+      </p>
+      <button
+        type="submit"
+        disabled={submitting}
+        className="px-3 py-1.5 bg-green-600 text-white rounded text-sm font-semibold disabled:opacity-50"
+      >
+        {submitting ? "Linking…" : "Link mission & complete"}
+      </button>
+    </form>
+  );
+}
+
+function CommentsThread({ groupId, requestId }: { groupId: string; requestId: string }) {
+  const [comments, setComments] = useState<
+    Array<{
+      id: string;
+      content: string;
+      createdAt: string;
+      authorEmail: string;
+      authorName: string | null;
+    }>
+  >([]);
+  const [loading, setLoading] = useState(true);
+  const [posting, setPosting] = useState(false);
+  const [text, setText] = useState("");
+  const [error, setError] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/groups/${groupId}/requests/${requestId}/comments`);
+      if (!res.ok) throw new Error(`Failed (HTTP ${res.status})`);
+      const json = await res.json();
+      setComments(json.comments ?? []);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setLoading(false);
+    }
+  }, [groupId, requestId]);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  const submit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!text.trim()) return;
+    setPosting(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/groups/${groupId}/requests/${requestId}/comments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: text.trim() }),
+      });
+      if (!res.ok) {
+        const json = await res.json().catch(() => ({}));
+        throw new Error(json.error ?? `Failed (HTTP ${res.status})`);
+      }
+      setText("");
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setPosting(false);
+    }
+  };
+
+  return (
+    <div className="mt-3 pt-3 border-t border-gray-100">
+      {loading && <p className="text-sm text-gray-500">Loading comments…</p>}
+      {error && <p className="text-sm text-red-600 mb-2">{error}</p>}
+      {!loading && comments.length === 0 && (
+        <p className="text-sm text-gray-500 italic mb-2">No comments yet.</p>
+      )}
+      <ul className="space-y-2 mb-3">
+        {comments.map((c) => (
+          <li key={c.id} className="text-sm bg-gray-50 rounded p-2">
+            <div className="text-xs text-gray-500 mb-0.5">
+              {c.authorName ?? c.authorEmail} ·{" "}
+              {new Date(c.createdAt).toLocaleString()}
+            </div>
+            <p className="whitespace-pre-wrap">{c.content}</p>
+          </li>
+        ))}
+      </ul>
+      <form onSubmit={submit} className="flex gap-2">
+        <input
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          maxLength={2000}
+          placeholder="Add a comment…"
+          className="flex-1 px-3 py-2 border border-gray-300 rounded text-sm"
+        />
+        <button
+          type="submit"
+          disabled={posting || !text.trim()}
+          className="px-3 py-1.5 bg-gray-800 text-white rounded text-sm font-semibold disabled:opacity-50"
+        >
+          {posting ? "Posting…" : "Post"}
+        </button>
+      </form>
+    </div>
+  );
+}
+
+function StatusBadge({ status }: { status: FlightRequestRow["status"] }) {
+  const cls: Record<FlightRequestRow["status"], string> = {
+    open: "bg-sky-100 text-sky-800",
+    claimed: "bg-amber-100 text-amber-800",
+    in_progress: "bg-amber-100 text-amber-800",
+    completed: "bg-green-100 text-green-800",
+    cancelled: "bg-gray-100 text-gray-600",
+  };
+  return (
+    <span
+      className={`inline-block px-2 py-0.5 rounded text-xs font-semibold ${cls[status]}`}
+    >
+      {status.replace(/_/g, " ").toUpperCase()}
+    </span>
+  );
+}
+
+function PriorityBadge({ priority }: { priority: FlightRequestRow["priority"] }) {
+  if (priority === "medium") return null;
+  const cls =
+    priority === "high" ? "bg-red-100 text-red-800" : "bg-blue-100 text-blue-800";
+  return (
+    <span className={`inline-block px-2 py-0.5 rounded text-xs font-semibold ${cls}`}>
+      {priority.toUpperCase()}
+    </span>
   );
 }
 

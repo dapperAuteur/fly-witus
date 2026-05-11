@@ -1,157 +1,165 @@
-# UAS Pre-Flight Checklist System
+# Fly WitUS
 
-**Fly Wit Us** - Professional drone flight checklist and logging system for FAA Part 107 compliance.
+Pre-flight checklist + flight log for Part 107 drone operators. Offline-first PWA, free for solo pilots, paid plans add cloud sync, groups, and shared mission feeds for crews and BVC partners.
 
-![Fly Wit Us Logo](https://res.cloudinary.com/devdash54321/image/upload/v1760659304/logos/flywitus-platypus-logo.png)
+🌐 **Live**: <https://fly.witus.online>
 
-## Overview
+![Fly WitUS](https://res.cloudinary.com/devdash54321/image/upload/v1760659304/logos/flywitus-platypus-logo.png)
 
-A comprehensive, offline-first web application for UAS (Unmanned Aircraft System) pilots to complete pre-flight checklists, log missions, and maintain FAA-compliant flight records.
+## What it does
 
-## Features
+- **Pre-flight checklist** — 8 sections, 50+ items aligned to 14 CFR Part 107
+- **Flight log** — multi-flight per mission, battery voltage, takeoff/landing, free-text notes
+- **PDF export** — jsPDF, FAA-rubric-ready, no print dialog (works in iOS Safari)
+- **Offline-first** — service worker + IndexedDB outbox; flush on reconnect
+- **Live weather** — NOAA gridpoint forecast, ZIP→lat/lon via free Census geocoder
+- **Photo attachments** — Cloudinary unsigned upload, embedded in PDF
+- **Aircraft profiles** — per-pilot inventory, quick-load on new mission
+- **Magic-link auth** — no passwords, no OAuth (Better Auth + Mailgun)
+- **Cloud sync** — signed-in missions persist to Postgres (Neon)
+- **Groups** *(paid)* — invite a crew, share missions to a feed, post flight requests for footage
+- **BVC fields** — episode, course slug, partner institution, academic purpose for primary-source flights
+- **Stripe + CashApp** — card subscription/lifetime via Stripe; manual CashApp activation flow
+- **Admin panel** — KPI dashboard, user/tier management, lifetime slot counter, promo CRUD with auto-created Stripe coupons
 
-### Current (MVP v2.0)
+## Plans
 
-- ✅ **Auto-Save** - Real-time persistence, never lose progress
-- ✅ **Complete Pre-Flight Checklist** - 8 sections, 50+ items based on FAA Part 107
-- ✅ **Weather Logging** - Manual entry + NOAA API auto-fetch
-- ✅ **Battery Tracking** - Log up to 4 battery voltages per mission
-- ✅ **Flight Log** - Record multiple flights per mission with timestamps
-- ✅ **Aircraft Profiles** - Save and quick-load aircraft configurations
-- ✅ **Mission History** - View past 10 missions with search
-- ✅ **Export Options** - JSON backup + FAA-compliant PDF/TXT
-- ✅ **Progress Tracking** - Visual progress bar for required items
-- ✅ **Offline-First** - Works without internet, syncs when available
+- **Free** — solo, localStorage-only, full checklist + PDF + offline. No sign-in required.
+- **Cloud Monthly** — $10.60/mo. Multi-device sync + groups + flight requests.
+- **Cloud Annual** — $103.29/yr. Same as Monthly, save ~$24.
+- **Lifetime** — $103.29 one-time (100 standard slots, then closed unless re-opened by promo). Card via Stripe or `$Centenarian` on CashApp.
 
-### Tech Stack
+See [pricing](https://fly.witus.online/pricing).
 
-- React 18 + TypeScript
-- Tailwind CSS
-- Browser localStorage (offline persistence)
-- NOAA Weather API integration
+## Tech
 
-## Installation
+- **Framework**: Next.js 15 (App Router) on Vercel
+- **DB**: Neon Postgres + Drizzle ORM
+- **Auth**: Better Auth (magic-link)
+- **Email**: Mailgun via `mg.witus.online`
+- **Payments**: Stripe (card) + CashApp (manual)
+- **Media**: Cloudinary (unsigned widget)
+- **PDF**: jsPDF
+- **PWA**: Serwist + IndexedDB outbox
+- **Cron**: Vercel Cron (24h CashApp SLA reminder)
 
-### Option 1: Run Locally
+## Local development
+
 ```bash
-# Clone repository
 git clone https://github.com/dapperAuteur/fly-witus.git
 cd fly-witus
-
-# Install dependencies
 npm install
-
-# Start development server
-npm run dev
+cp .env.example .env.local        # fill in real values
+vercel env pull                    # if linked to Vercel project
+npm run db:migrate                 # apply Drizzle migrations
+npm run dev                        # http://localhost:3000
 ```
 
-### Option 2: Deploy to Vercel/Netlify
-```bash
-# Build for production
-npm run build
+Required env: `DATABASE_URL`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `ADMIN_EMAIL`. Stripe / Mailgun / Cloudinary / CashApp env are optional for local dev — features they back surface a friendly fallback when their env is absent.
 
-# Deploy (example for Vercel)
-vercel deploy
+## API surface (signed-in users)
+
+| Method | Path | Purpose |
+|---|---|---|
+| GET / POST | `/api/missions` | List user missions / save new |
+| PUT / DELETE | `/api/missions/[id]` | Update / delete |
+| GET / PATCH | `/api/profile` | Read / edit display name, cert, home location |
+| GET / POST | `/api/aircraft-profiles` | List / create aircraft |
+| PATCH / DELETE | `/api/aircraft-profiles/[id]` | Edit / remove |
+| GET / POST | `/api/groups` *(paid)* | List user's groups / create |
+| GET / PATCH / DELETE | `/api/groups/[id]` *(member)* | Dashboard payload / owner edit / delete |
+| POST | `/api/groups/join` *(paid)* | Accept invite code |
+| POST | `/api/groups/[id]/share-mission` *(member)* | Share own mission to group |
+| GET / POST | `/api/groups/[id]/requests` *(member)* | List / create flight requests |
+| POST | `/api/groups/[id]/requests/[r]/claim` *(member)* | Claim open request |
+| POST | `/api/groups/[id]/requests/[r]/complete` *(claimant)* | Link mission, auto-share, notify requester |
+| GET / POST | `/api/groups/[id]/requests/[r]/comments` *(member)* | Thread |
+| POST | `/api/checkout` | Stripe Checkout session |
+| POST | `/api/cashapp/request` | Submit CashApp activation request |
+| POST | `/api/stripe/webhook` | Stripe event handler |
+| GET | `/api/weather` | NOAA forecast for ZIP/lat-lon |
+
+## Admin (gated by `users.isAdmin`)
+
+| Path | Purpose |
+|---|---|
+| `/admin` | KPI dashboard + recent activity |
+| `/admin/users` | Search, paginate, change tier / admin flag |
+| `/admin/cashapp` | Activate / reject CashApp queue + manual reminder trigger |
+| `/admin/lifetime` | Standard 100-slot counter + reconcile against actual lifetime users |
+| `/admin/promos` | CRUD lifetime-reopen + discount promos; Stripe coupon auto-created on save |
+| `/admin/groups` | Read-only group inventory |
+
+Non-admins see 404 on `/admin/*` (no existence leak).
+
+## Project structure
+
+```
+src/
+├── app/
+│   ├── (auth)/login/             # magic-link sign-in
+│   ├── admin/                    # gated admin panel
+│   ├── api/
+│   │   ├── auth/[...all]/        # Better Auth
+│   │   ├── missions/             # mission CRUD
+│   │   ├── groups/               # groups + flight requests
+│   │   ├── checkout/             # Stripe Checkout
+│   │   ├── stripe/webhook/       # Stripe events
+│   │   ├── cashapp/request/      # CashApp manual activation
+│   │   └── cron/cashapp-reminder/  # daily 24h SLA sweep
+│   ├── dashboard/                # user dashboard
+│   ├── groups/                   # group list/create/dashboard
+│   ├── join/[inviteCode]/        # invite landing
+│   ├── pricing/                  # /pricing
+│   ├── cashapp/request/          # CashApp request form
+│   └── page.tsx                  # checklist (anon-friendly)
+├── components/site-footer.tsx
+├── db/
+│   ├── client.ts                 # pg pool + drizzle
+│   ├── schema/                   # auth, missions, commerce, groups, aircraft-profiles
+│   └── migrations/
+└── lib/
+    ├── env.ts                    # zod-validated env
+    ├── auth.ts                   # Better Auth + magic-link
+    ├── auth-client.ts
+    ├── api-auth.ts               # requireUser / requireAdmin
+    ├── tier.ts                   # requirePaidUser
+    ├── mailer.ts                 # Mailgun + RFC-5322 normalization
+    ├── stripe.ts                 # Stripe client + slot counter helpers
+    ├── promos.ts                 # Stripe coupon + promotion-code sync
+    ├── pdf.ts                    # jsPDF mission export
+    ├── noaa.ts                   # NOAA + Census ZIP fallback
+    ├── offline-outbox.ts         # IDB outbox for offline writes
+    ├── checklist-data.ts
+    ├── missions-store.ts         # auth-aware read/write
+    ├── missions-api.ts / -queries.ts
+    ├── groups-api.ts / -queries.ts
+    ├── aircraft-profiles-api.ts
+    ├── profile-api.ts
+    ├── outbox-trigger.ts         # WitUS Outbox social-draft fan-out
+    ├── outbox-mission-caption.ts
+    ├── inbox.ts                  # WitUS Inbox push
+    └── admin-notify.ts
 ```
 
-## Usage
+## Verification before launch
 
-### Pre-Flight Workflow
-
-1. **Load Aircraft Profile** (optional)
-   - Click "Aircraft Profiles" → Select saved aircraft
-   - Auto-fills type and certificate number
-
-2. **Fill Mission Info**
-   - Pilot name, location, aircraft type
-   - Click "Auto-Fetch Weather" for live conditions
-
-3. **Complete Checklist**
-   - Progress bar shows completion percentage
-   - Red asterisks (*) mark required items
-   - Battery voltages auto-expand when checked
-
-4. **Log Flights**
-   - Click "+ Add Flight" after each flight
-   - Record takeoff/landing times, locations, notes
-
-5. **Save Mission**
-   - Button unlocks at 100% completion
-   - Automatically saved to browser storage
-
-6. **Export Records**
-   - View Mission History → Export PDF (FAA compliance)
-   - Export JSON for backup/cloud storage
-
-## Data Storage
-
-All data stored in browser localStorage:
-- `uas_missions` - Completed missions
-- `uas_aircraft_profiles` - Saved aircraft
-- `uas_current_mission` - Auto-save draft
-
-**Backup Strategy**: Export JSON weekly, upload to Google Drive/Dropbox.
-
-## Configuration
-
-### Logo Customization
-Update logo URL in component:
-```typescript
-// Header logo: 80x80px
-<img src="https://fly.witus.online/logo.png" alt="Your Company" className="h-16 w-auto" />
-
-// Footer logo: 60x60px  
-<img src="https://fly.witus.online/logo.png" alt="Your Company" className="h-12 w-auto" />
-```
-
-### Weather API
-Uses NOAA's free API (no key required):
-- Requires GPS location access
-- Falls back to manual entry if unavailable
-
-## Browser Support
-
-- Chrome 90+
-- Firefox 88+
-- Safari 14+
-- Edge 90+
-
-**Note**: localStorage required. Private/Incognito mode may limit functionality.
-
-## FAA Compliance
-
-This system helps meet 14 CFR Part 107 requirements:
-- Pre-flight inspection documentation
-- Weather condition logging
-- Flight time records
-- Equipment condition tracking
-
-**Legal Note**: Export PDFs for official logbook. Consult with aviation attorney for specific compliance needs.
+See [docs/launch/smoke-checklist.md](docs/launch/smoke-checklist.md) for the end-to-end pre-launch verification.
 
 ## Contributing
 
-See [CONTRIBUTING.md](https://i.witus.online/fly-witus-contributing) for guidelines.
+[CONTRIBUTING.md](https://i.witus.online/fly-witus-contributing)
 
-## Roadmap
+## Issues
 
-See [ROADMAP.md](https://i.witus.online/fly-witus-dev-roadmap) for planned features.
+[GitHub issues](https://i.witus.online/fly-witus-issues-tracker)
 
 ## License
 
-MIT License - See [LICENSE](LICENSE) for details.
-
-## Support
-
-- **Website**: [Fly Wit US](https://i.witus.online/fly-witus-dev-roadmap)
-- **Issues**: [Issues](https://i.witus.online/fly-witus-issues-tracker)
-- **Email**: support@witus.online
+MIT — see [LICENSE](LICENSE).
 
 ## Acknowledgments
 
-- Checklist based on FAA Part 107 regulations
-- Weather data from National Weather Service API
-- Icon design by Fly Wit Us team
-
----
-
-**Fly Wit Us** - Safe Flying Through Better Planning
+- Checklist aligned to 14 CFR Part 107
+- Weather: NWS gridpoint forecasts (NOAA) + Census ZCTA geocoder
+- Built by [BAM](https://brandanthonymcdonald.com) — Part 107 pilot, ed-tech founder

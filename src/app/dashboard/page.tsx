@@ -63,9 +63,14 @@ export default function DashboardPage() {
     <main className="max-w-4xl mx-auto p-6 space-y-10">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Dashboard</h1>
-        <Link href="/" className="text-sm text-sky-700 hover:underline">
-          ← Back to checklist
-        </Link>
+        <div className="flex items-center gap-4">
+          <Link href="/groups" className="text-sm text-sky-700 hover:underline">
+            Groups →
+          </Link>
+          <Link href="/" className="text-sm text-sky-700 hover:underline">
+            ← Back to checklist
+          </Link>
+        </div>
       </div>
       <ProfileSection />
       <AircraftSection />
@@ -493,42 +498,11 @@ function MissionsSection() {
       )}
       <ul className="space-y-2">
         {sorted.map((m) => (
-          <li
+          <MissionRow
             key={m.id}
-            className="flex items-start justify-between gap-4 bg-white border border-gray-200 rounded-lg p-3"
-          >
-            <div className="min-w-0">
-              <div className="font-semibold">
-                Mission {m.missionNumber}{" "}
-                <span className="text-gray-500 font-normal text-sm">
-                  · {new Date(m.timestamp).toLocaleString()}
-                </span>
-              </div>
-              <div className="text-sm text-gray-600">
-                {[m.aircraftType, m.location].filter(Boolean).join(" · ") || (
-                  <span className="italic">No details</span>
-                )}
-              </div>
-              <div className="text-xs text-gray-500 mt-1">
-                {m.flights.length} flight{m.flights.length === 1 ? "" : "s"} · {m.photos.length}{" "}
-                photo{m.photos.length === 1 ? "" : "s"}
-              </div>
-            </div>
-            <div className="flex gap-2 shrink-0">
-              <Link
-                href={`/?edit=${m.id}`}
-                className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50"
-              >
-                Edit
-              </Link>
-              <button
-                onClick={() => handleDelete(m.id, m.missionNumber)}
-                className="px-3 py-1 text-sm border border-red-300 text-red-700 rounded hover:bg-red-50"
-              >
-                Delete
-              </button>
-            </div>
-          </li>
+            mission={m}
+            onDelete={() => handleDelete(m.id, m.missionNumber)}
+          />
         ))}
       </ul>
       <p className="text-xs text-gray-500 mt-3">
@@ -536,6 +510,211 @@ function MissionsSection() {
         record (PUT /api/missions/[id]).
       </p>
     </section>
+  );
+}
+
+function MissionRow({
+  mission,
+  onDelete,
+}: {
+  mission: MissionSummary;
+  onDelete: () => void;
+}) {
+  const [shareOpen, setShareOpen] = useState(false);
+  return (
+    <li className="bg-white border border-gray-200 rounded-lg p-3">
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <div className="font-semibold">
+            Mission {mission.missionNumber}{" "}
+            <span className="text-gray-500 font-normal text-sm">
+              · {new Date(mission.timestamp).toLocaleString()}
+            </span>
+          </div>
+          <div className="text-sm text-gray-600">
+            {[mission.aircraftType, mission.location].filter(Boolean).join(" · ") || (
+              <span className="italic">No details</span>
+            )}
+          </div>
+          <div className="text-xs text-gray-500 mt-1">
+            {mission.flights.length} flight{mission.flights.length === 1 ? "" : "s"} ·{" "}
+            {mission.photos.length} photo{mission.photos.length === 1 ? "" : "s"}
+          </div>
+        </div>
+        <div className="flex gap-2 shrink-0">
+          <button
+            onClick={() => setShareOpen((v) => !v)}
+            className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50"
+          >
+            {shareOpen ? "Cancel" : "Share to group"}
+          </button>
+          <Link
+            href={`/?edit=${mission.id}`}
+            className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50"
+          >
+            Edit
+          </Link>
+          <button
+            onClick={onDelete}
+            className="px-3 py-1 text-sm border border-red-300 text-red-700 rounded hover:bg-red-50"
+          >
+            Delete
+          </button>
+        </div>
+      </div>
+      {shareOpen && (
+        <ShareToGroupForm
+          missionId={mission.id}
+          onClose={() => setShareOpen(false)}
+        />
+      )}
+    </li>
+  );
+}
+
+function ShareToGroupForm({
+  missionId,
+  onClose,
+}: {
+  missionId: string;
+  onClose: () => void;
+}) {
+  const [groups, setGroups] = useState<Array<{ id: string; name: string }>>([]);
+  const [loading, setLoading] = useState(true);
+  const [needsUpgrade, setNeedsUpgrade] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [feedback, setFeedback] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/groups");
+        if (cancelled) return;
+        if (res.status === 403) {
+          setNeedsUpgrade(true);
+          return;
+        }
+        if (!res.ok) throw new Error(`Failed (HTTP ${res.status})`);
+        const json = await res.json();
+        setGroups(json.groups ?? []);
+      } catch (err) {
+        if (!cancelled) setError(err instanceof Error ? err.message : String(err));
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setSubmitting(true);
+    setError(null);
+    setFeedback(null);
+    const form = new FormData(e.currentTarget);
+    const groupId = form.get("groupId") as string;
+    const note = (form.get("note") as string).trim();
+    if (!groupId) {
+      setError("Pick a group");
+      setSubmitting(false);
+      return;
+    }
+    try {
+      const res = await fetch(`/api/groups/${groupId}/share-mission`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ missionId, note: note || undefined }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (res.status === 409) {
+        setError("Already shared to this group");
+        return;
+      }
+      if (!res.ok) throw new Error(json.error ?? `Share failed (HTTP ${res.status})`);
+      setFeedback("Shared.");
+      setTimeout(onClose, 1200);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="mt-3 pt-3 border-t border-gray-100">
+        <p className="text-sm text-gray-500">Loading groups…</p>
+      </div>
+    );
+  }
+
+  if (needsUpgrade) {
+    return (
+      <div className="mt-3 pt-3 border-t border-gray-100">
+        <p className="text-sm text-gray-700">
+          Sharing to groups requires Cloud or Lifetime.{" "}
+          <Link href="/pricing" className="text-sky-700 underline">
+            See pricing
+          </Link>
+        </p>
+      </div>
+    );
+  }
+
+  if (groups.length === 0) {
+    return (
+      <div className="mt-3 pt-3 border-t border-gray-100">
+        <p className="text-sm text-gray-700">
+          You&apos;re not in any groups yet.{" "}
+          <Link href="/groups" className="text-sky-700 underline">
+            Create one
+          </Link>
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <form
+      onSubmit={handleSubmit}
+      className="mt-3 pt-3 border-t border-gray-100 space-y-2"
+    >
+      <select
+        name="groupId"
+        defaultValue=""
+        className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+      >
+        <option value="" disabled>
+          Pick a group…
+        </option>
+        {groups.map((g) => (
+          <option key={g.id} value={g.id}>
+            {g.name}
+          </option>
+        ))}
+      </select>
+      <input
+        name="note"
+        placeholder="Optional note"
+        maxLength={500}
+        className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+      />
+      <div className="flex items-center gap-2">
+        <button
+          type="submit"
+          disabled={submitting}
+          className="px-3 py-1.5 bg-sky-600 text-white rounded text-sm font-semibold disabled:opacity-50"
+        >
+          {submitting ? "Sharing…" : "Share"}
+        </button>
+        {feedback && <span className="text-sm text-green-700">{feedback}</span>}
+        {error && <span className="text-sm text-red-600">{error}</span>}
+      </div>
+    </form>
   );
 }
 

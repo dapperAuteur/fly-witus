@@ -12,7 +12,8 @@
     "db:migrate": "tsx --env-file=.env.local scripts/migrate.ts",
     "db:migrate:prod": "tsx scripts/migrate.ts",
     "db:studio": "drizzle-kit studio",
-    "db:push": "drizzle-kit push"
+    "db:push": "drizzle-kit push",
+    "noaa:sweep": "tsx scripts/noaa-sweep.ts"
   },
   "dependencies": {
     "@vercel/analytics": "^1.5.0",

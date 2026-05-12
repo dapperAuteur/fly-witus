@@ -50,9 +50,39 @@ async function loadActiveLifetimeReopenPromo() {
   return rows[0] ?? null;
 }
 
+// Surface a banner for active discount promos that have bannerText set.
+// We show at most one — admin can rank by editing isActive.
+async function loadActiveDiscountBanner() {
+  const now = new Date();
+  const rows = await db
+    .select({
+      id: promos.id,
+      bannerText: promos.bannerText,
+      promoCode: promos.promoCode,
+      discountKind: promos.discountKind,
+      discountAmount: promos.discountAmount,
+      appliesTo: promos.appliesTo,
+    })
+    .from(promos)
+    .where(
+      and(
+        eq(promos.app, "fly_witus"),
+        eq(promos.type, "discount"),
+        eq(promos.isActive, true),
+        or(isNull(promos.startsAt), lte(promos.startsAt, now)),
+        or(isNull(promos.endsAt), gte(promos.endsAt, now)),
+      ),
+    )
+    .limit(1);
+  return rows[0] ?? null;
+}
+
 export default async function PricingPage() {
   const counter = await getLifetimeCounter();
-  const promo = await loadActiveLifetimeReopenPromo();
+  const [promo, discountBanner] = await Promise.all([
+    loadActiveLifetimeReopenPromo(),
+    loadActiveDiscountBanner(),
+  ]);
 
   const standardSlotsRemaining = Math.max(
     0,
@@ -98,13 +128,34 @@ export default async function PricingPage() {
         </header>
 
         {promo && (
-          <div className="mb-8 rounded-2xl border-2 border-amber-300 bg-amber-50 p-5">
+          <div className="mb-4 rounded-2xl border-2 border-amber-300 bg-amber-50 p-5">
             <p className="text-sm font-bold text-amber-900 uppercase tracking-wider mb-1">
               ⚡ Limited time
             </p>
             <p className="text-base text-amber-950">
               {promo.bannerText ??
                 `Lifetime accounts re-opened at $${promo.lifetimePriceCard?.toFixed(2)}. ${promoSlotsRemaining} slots available.`}
+            </p>
+          </div>
+        )}
+
+        {discountBanner && discountBanner.bannerText && (
+          <div className="mb-8 rounded-2xl border-2 border-sky-300 bg-sky-50 p-5">
+            <p className="text-sm font-bold text-sky-900 uppercase tracking-wider mb-1">
+              🎟 Active discount
+            </p>
+            <p className="text-base text-sky-950">
+              {discountBanner.bannerText}
+              {discountBanner.promoCode && (
+                <>
+                  {" "}
+                  Use code{" "}
+                  <code className="font-mono font-bold bg-white px-2 py-0.5 rounded">
+                    {discountBanner.promoCode}
+                  </code>{" "}
+                  at checkout.
+                </>
+              )}
             </p>
           </div>
         )}

@@ -2,6 +2,7 @@ import { desc, eq, isNotNull } from "drizzle-orm";
 import { db } from "@/db/client";
 import { users } from "@/db/schema/auth";
 import { CashAppQueue } from "./_components/cashapp-queue";
+import { RunReminderButton } from "./_components/run-reminder-button";
 
 // Admin gate is enforced by app/admin/layout.tsx; this page can assume
 // the requester is an admin.
@@ -54,15 +55,18 @@ export default async function AdminCashAppPage(props: {
 
   return (
     <div className="space-y-6">
-      <header>
-        <h1 className="text-2xl font-extrabold text-gray-900">
-          CashApp Activation Queue
-        </h1>
-        {pendingCount > 0 && (
-          <p className="mt-1 text-sm text-amber-700">
-            ⚠️ {pendingCount} pending — 24-hour SLA.
-          </p>
-        )}
+      <header className="flex items-start justify-between gap-3 flex-wrap">
+        <div>
+          <h1 className="text-2xl font-extrabold text-gray-900">
+            CashApp Activation Queue
+          </h1>
+          {pendingCount > 0 && (
+            <p className="mt-1 text-sm text-amber-700">
+              ⚠️ {pendingCount} pending — 24-hour SLA.
+            </p>
+          )}
+        </div>
+        <RunReminderButton />
       </header>
 
       <nav className="flex gap-2 flex-wrap">

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSession } from "@/lib/auth-client";
 import type { AircraftProfile } from "@/db/schema/aircraft-profiles";
+import { AccountSection } from "./_components/account-section";
 
 // Dashboard data shapes are intentionally narrower than the full DB rows
 // — only the columns the UI binds to. The /api/profile route already
@@ -65,6 +66,7 @@ export default function DashboardPage() {
       <ProfileSection />
       <AircraftSection />
       <MissionsSection />
+      <AccountSection />
     </main>
   );
 }

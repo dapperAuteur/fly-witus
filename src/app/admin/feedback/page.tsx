@@ -1,6 +1,10 @@
-import { desc } from "drizzle-orm";
+import { desc, inArray } from "drizzle-orm";
 import { db } from "@/db/client";
-import { feedbackSubmissions } from "@/db/schema/feedback";
+import {
+  feedbackAttachments,
+  feedbackSubmissions,
+  type FeedbackAttachment,
+} from "@/db/schema/feedback";
 import { feedbackTypeLabel, type FeedbackType } from "@/lib/feedback-api";
 import { StatusControl } from "./_components/status-control";
 
@@ -22,6 +26,20 @@ export default async function AdminFeedbackPage() {
     .from(feedbackSubmissions)
     .orderBy(desc(feedbackSubmissions.createdAt))
     .limit(200);
+
+  const ids = rows.map((r) => r.id);
+  const atts = ids.length
+    ? await db
+        .select()
+        .from(feedbackAttachments)
+        .where(inArray(feedbackAttachments.feedbackId, ids))
+    : [];
+  const attachmentsByFeedback = new Map<string, FeedbackAttachment[]>();
+  for (const a of atts) {
+    const list = attachmentsByFeedback.get(a.feedbackId);
+    if (list) list.push(a);
+    else attachmentsByFeedback.set(a.feedbackId, [a]);
+  }
 
   return (
     <div className="space-y-6">
@@ -65,6 +83,29 @@ export default async function AdminFeedbackPage() {
               )}
               {r.userAgent && (
                 <p className="text-xs text-muted-foreground truncate">{r.userAgent}</p>
+              )}
+              {(attachmentsByFeedback.get(r.id) ?? []).length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {(attachmentsByFeedback.get(r.id) ?? []).map((a) => (
+                    <a
+                      key={a.id}
+                      href={a.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block border border-border rounded-md overflow-hidden"
+                      title={`Open ${a.kind}`}
+                    >
+                      {a.kind === "image" ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={a.url} alt="attachment" className="h-16 w-16 object-cover" />
+                      ) : (
+                        <span className="h-16 w-16 flex items-center justify-center text-xs bg-muted">
+                          🎬 video
+                        </span>
+                      )}
+                    </a>
+                  ))}
+                </div>
               )}
             </li>
           ))}

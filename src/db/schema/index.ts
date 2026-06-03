@@ -8,3 +8,4 @@ export * from "./missions";
 export * from "./commerce";
 export * from "./aircraft-profiles";
 export * from "./groups";
+export * from "./feedback";

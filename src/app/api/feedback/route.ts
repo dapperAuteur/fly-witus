@@ -2,7 +2,7 @@ import { headers } from "next/headers";
 import { NextResponse, after } from "next/server";
 import { nanoid } from "nanoid";
 import { db } from "@/db/client";
-import { feedbackSubmissions } from "@/db/schema/feedback";
+import { feedbackAttachments, feedbackSubmissions } from "@/db/schema/feedback";
 import { auth } from "@/lib/auth";
 import { feedbackInputSchema } from "@/lib/feedback-api";
 import { notifyOfFeedback } from "@/lib/feedback-notify";
@@ -34,14 +34,26 @@ export async function POST(req: Request) {
   const id = nanoid();
 
   try {
-    await db.insert(feedbackSubmissions).values({
-      id,
-      userId,
-      type: input.type,
-      message: input.message,
-      pageUrl: input.pageUrl ?? null,
-      userAgent: input.userAgent ?? null,
-      contactEmail,
+    await db.transaction(async (tx) => {
+      await tx.insert(feedbackSubmissions).values({
+        id,
+        userId,
+        type: input.type,
+        message: input.message,
+        pageUrl: input.pageUrl ?? null,
+        userAgent: input.userAgent ?? null,
+        contactEmail,
+      });
+      if (input.attachments?.length) {
+        await tx.insert(feedbackAttachments).values(
+          input.attachments.map((a) => ({
+            id: nanoid(),
+            feedbackId: id,
+            url: a.url,
+            kind: a.kind,
+          })),
+        );
+      }
     });
   } catch (err) {
     console.error("[POST /api/feedback]", err);
@@ -60,6 +72,7 @@ export async function POST(req: Request) {
       pageUrl: input.pageUrl,
       userAgent: input.userAgent,
       submitterEmail: contactEmail,
+      attachments: input.attachments,
     }),
   );
 

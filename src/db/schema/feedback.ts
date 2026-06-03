@@ -40,3 +40,22 @@ export const feedbackSubmissions = pgTable(
 
 export type FeedbackSubmission = typeof feedbackSubmissions.$inferSelect;
 export type NewFeedbackSubmission = typeof feedbackSubmissions.$inferInsert;
+
+// Screenshots / screen recordings attached to a submission. Uploaded
+// client-side to Cloudinary (unsigned), so we store the resulting URL +
+// whether it's an image or a video. Cascade with the parent submission.
+export const feedbackAttachments = pgTable(
+  "feedback_attachments",
+  {
+    id: text("id").primaryKey(),
+    feedbackId: text("feedback_id")
+      .notNull()
+      .references(() => feedbackSubmissions.id, { onDelete: "cascade" }),
+    url: text("url").notNull(),
+    kind: text("kind").notNull(), // image | video
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [index("feedback_attachments_feedback_idx").on(table.feedbackId)],
+);
+
+export type FeedbackAttachment = typeof feedbackAttachments.$inferSelect;

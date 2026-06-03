@@ -34,12 +34,14 @@ export interface FeedbackNotifyInput {
   pageUrl?: string | null;
   userAgent?: string | null;
   submitterEmail?: string | null;
+  attachments?: Array<{ url: string; kind: string }>;
 }
 
 export async function notifyOfFeedback(input: FeedbackNotifyInput): Promise<void> {
   const label = feedbackTypeLabel(input.type);
   const recipient = adminRecipient();
   const submitter = input.submitterEmail || "anonymous";
+  const attachments = input.attachments ?? [];
 
   // Channel 1 — admin email. Wrapped so a Mailgun failure can't bubble.
   await sendEmail({
@@ -53,6 +55,9 @@ export async function notifyOfFeedback(input: FeedbackNotifyInput): Promise<void
       ``,
       input.message,
       ``,
+      ...(attachments.length
+        ? ["Attachments:", ...attachments.map((a) => `  [${a.kind}] ${a.url}`), ""]
+        : []),
       `Triage queue: ${ADMIN_QUEUE_URL}`,
     ].join("\n"),
   }).catch((err) => {
@@ -71,6 +76,7 @@ export async function notifyOfFeedback(input: FeedbackNotifyInput): Promise<void
       message: input.message,
       pageUrl: input.pageUrl ?? undefined,
       userAgent: input.userAgent ?? undefined,
+      attachments,
       adminQueueUrl: ADMIN_QUEUE_URL,
     },
   });

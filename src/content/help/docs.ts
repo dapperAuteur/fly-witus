@@ -317,7 +317,7 @@ export const HELP_DOCS: HelpDoc[] = [
       { kind: "heading", text: "Still stuck?" },
       {
         kind: "paragraph",
-        text: "Open the Help bubble and send a bug report or question. You don't need to be signed in — add your email so we can reply.",
+        text: "Open the Help bubble and send a bug report or question. You can attach a screenshot (or paste one into the message) or record your screen right from the widget to show us the problem. You don't need to be signed in — add your email so we can reply.",
       },
     ],
   },

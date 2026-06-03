@@ -43,8 +43,8 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-8 border-t-4 border-sky-500">
+    <main className="min-h-screen flex items-center justify-center bg-muted px-4">
+      <div className="w-full max-w-md bg-card text-card-foreground rounded-2xl shadow-lg p-8 border-t-4 border-sky-500">
         <div className="flex flex-col items-center mb-6">
           <Image
             src="/flywitus-platypus-logo.png"
@@ -54,17 +54,17 @@ export default function LoginPage() {
             className="h-14 w-auto mb-3"
             priority
           />
-          <h1 className="text-2xl font-extrabold text-gray-900">Fly WitUS</h1>
+          <h1 className="text-2xl font-extrabold text-card-foreground">Fly WitUS</h1>
         </div>
 
         {submitted ? (
           <div className="text-center">
-            <h2 className="text-xl font-bold text-gray-900 mb-2">Check your email</h2>
-            <p className="text-gray-600 text-sm mb-1">
+            <h2 className="text-xl font-bold text-card-foreground mb-2">Check your email</h2>
+            <p className="text-muted-foreground text-sm mb-1">
               We sent a sign-in link to{" "}
-              <span className="font-semibold text-gray-900">{submitted}</span>.
+              <span className="font-semibold text-card-foreground">{submitted}</span>.
             </p>
-            <p className="text-gray-600 text-sm mb-6">
+            <p className="text-muted-foreground text-sm mb-6">
               Click the link to continue. It expires in 15 minutes.
             </p>
             <button
@@ -77,7 +77,7 @@ export default function LoginPage() {
           </div>
         ) : (
           <>
-            <p className="text-center text-gray-700 mb-4">Enter your email to sign in</p>
+            <p className="text-center text-muted-foreground mb-4">Enter your email to sign in</p>
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <input
@@ -88,7 +88,7 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="your@email.com"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+                className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
                 disabled={loading}
               />
               {error && (
@@ -106,18 +106,18 @@ export default function LoginPage() {
             </form>
 
             <div className="flex items-center my-6">
-              <div className="flex-grow border-t border-gray-200" />
-              <span className="px-3 text-xs text-gray-500 uppercase tracking-wider">or</span>
-              <div className="flex-grow border-t border-gray-200" />
+              <div className="flex-grow border-t border-border" />
+              <span className="px-3 text-xs text-muted-foreground uppercase tracking-wider">or</span>
+              <div className="flex-grow border-t border-border" />
             </div>
 
             <Link
               href="/"
-              className="block text-center w-full py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-semibold transition"
+              className="block text-center w-full py-2 border border-border text-muted-foreground rounded-lg hover:bg-muted font-semibold transition"
             >
               Continue Without Account
             </Link>
-            <p className="text-xs text-gray-500 text-center mt-2">
+            <p className="text-xs text-muted-foreground text-center mt-2">
               Local storage only — no cloud sync, no groups.
             </p>
           </>

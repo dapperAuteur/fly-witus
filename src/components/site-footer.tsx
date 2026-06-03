@@ -29,13 +29,13 @@ const SIBLING_PRODUCTS: SiblingProduct[] = [
 ];
 
 const linkClasses =
-  "inline-flex items-center min-h-[28px] text-gray-600 hover:text-sky-700 hover:underline transition-colors focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600 rounded";
+  "inline-flex items-center min-h-[28px] text-muted-foreground hover:text-sky-700 hover:underline transition-colors focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600 rounded";
 
 export function SiteFooter() {
   const year = new Date().getFullYear();
 
   return (
-    <footer className="bg-white border-t border-gray-200 mt-12">
+    <footer className="bg-card text-card-foreground border-t border-border mt-12">
       <div className="max-w-5xl mx-auto px-6 py-10">
         <div className="flex flex-col items-center text-center mb-8">
           <Image
@@ -45,15 +45,15 @@ export function SiteFooter() {
             height={56}
             className="h-12 w-auto mb-2"
           />
-          <p className="font-extrabold text-gray-900">FLY WIT US</p>
-          <p className="text-xs text-gray-500">UAS pre-flight + flight log</p>
+          <p className="font-extrabold text-card-foreground">FLY WIT US</p>
+          <p className="text-xs text-muted-foreground">UAS pre-flight + flight log</p>
         </div>
 
         <RiseWellnessCallout />
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 text-sm">
           <div>
-            <p className="text-gray-900 font-semibold mb-2">Ecosystem</p>
+            <p className="text-card-foreground font-semibold mb-2">Ecosystem</p>
             <ul className="space-y-1">
               {SIBLING_PRODUCTS.map((p) => (
                 <li key={p.href}>
@@ -72,7 +72,7 @@ export function SiteFooter() {
           </div>
 
           <div>
-            <p className="text-gray-900 font-semibold mb-2">Fly.WitUS</p>
+            <p className="text-card-foreground font-semibold mb-2">Fly.WitUS</p>
             <ul className="space-y-1">
               <li>
                 <Link href="/" className={linkClasses}>
@@ -98,7 +98,7 @@ export function SiteFooter() {
           </div>
 
           <div>
-            <p className="text-gray-900 font-semibold mb-2">Partners &amp; Legal</p>
+            <p className="text-card-foreground font-semibold mb-2">Partners &amp; Legal</p>
             <ul className="space-y-1">
               <li>
                 <a
@@ -110,7 +110,7 @@ export function SiteFooter() {
                   Rise Wellness
                   <span className="sr-only"> (wellness partner — opens in new tab)</span>
                 </a>
-                <p className="text-xs text-gray-400 leading-tight">Wellness partner</p>
+                <p className="text-xs text-muted-foreground leading-tight">Wellness partner</p>
               </li>
               <li className="pt-2">
                 <a
@@ -141,14 +141,14 @@ export function SiteFooter() {
           </div>
         </div>
 
-        <div className="mt-8 pt-6 border-t border-gray-100 text-xs text-gray-500 text-center">
+        <div className="mt-8 pt-6 border-t border-border text-xs text-muted-foreground text-center">
           <p>
             © {year} B4C LLC — A{" "}
             <a
               href="https://awesomewebstore.com"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-gray-600 hover:text-sky-700 hover:underline"
+              className="text-muted-foreground hover:text-sky-700 hover:underline"
             >
               AwesomeWebStore.com
               <span className="sr-only"> (opens in new tab)</span>
@@ -175,7 +175,7 @@ function RiseWellnessCallout() {
   return (
     <section
       aria-labelledby="rise-wellness-heading"
-      className="mb-8 rounded-lg border border-sky-100 bg-sky-50/60 p-5 text-sm"
+      className="mb-8 rounded-lg border border-sky-100 dark:border-sky-900 bg-sky-50/60 dark:bg-sky-950/30 p-5 text-sm"
     >
       <header className="mb-3">
         <p className="text-[11px] uppercase tracking-wide text-sky-700 font-semibold">
@@ -183,16 +183,16 @@ function RiseWellnessCallout() {
         </p>
         <h2
           id="rise-wellness-heading"
-          className="text-base font-semibold text-gray-900"
+          className="text-base font-semibold text-card-foreground"
         >
           Rise Wellness of Indiana
         </h2>
-        <p className="text-xs text-gray-500 mt-0.5">
+        <p className="text-xs text-muted-foreground mt-0.5">
           Independent mental health provider · Not affiliated with Fly.WitUS
         </p>
       </header>
 
-      <p className="text-gray-700 leading-relaxed">
+      <p className="text-muted-foreground leading-relaxed">
         Rise Wellness of Indiana provides compassionate, personalized,
         holistic mental health care — evidence-based medicine, trauma-informed
         care, and a whole-person approach to help you heal, grow, and thrive
@@ -201,10 +201,10 @@ function RiseWellnessCallout() {
 
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
         <div className="space-y-1">
-          <p className="text-[11px] uppercase tracking-wide text-gray-500 font-semibold">
+          <p className="text-[11px] uppercase tracking-wide text-muted-foreground font-semibold">
             Services
           </p>
-          <ul className="text-xs text-gray-700 space-y-0.5">
+          <ul className="text-xs text-muted-foreground space-y-0.5">
             <li>ADHD testing &amp; management (in-person and from home)</li>
             <li>Anxiety &amp; depression</li>
             <li>Maternal mental health</li>
@@ -216,10 +216,10 @@ function RiseWellnessCallout() {
         </div>
 
         <div className="space-y-1">
-          <p className="text-[11px] uppercase tracking-wide text-gray-500 font-semibold">
+          <p className="text-[11px] uppercase tracking-wide text-muted-foreground font-semibold">
             Visit or call
           </p>
-          <address className="not-italic text-xs text-gray-700 leading-relaxed">
+          <address className="not-italic text-xs text-muted-foreground leading-relaxed">
             320 North Meridian Street
             <br />
             Indianapolis, IN 46204
@@ -233,7 +233,7 @@ function RiseWellnessCallout() {
             >
               317-965-0299
             </a>
-            <span aria-hidden="true" className="text-gray-300">
+            <span aria-hidden="true" className="text-muted-foreground">
               ·
             </span>
             <a
@@ -245,7 +245,7 @@ function RiseWellnessCallout() {
               risewellnessofindiana.com
               <span className="sr-only"> (opens in new tab)</span>
             </a>
-            <span aria-hidden="true" className="text-gray-300">
+            <span aria-hidden="true" className="text-muted-foreground">
               ·
             </span>
             <a
@@ -261,17 +261,17 @@ function RiseWellnessCallout() {
         </div>
       </div>
 
-      <blockquote className="mt-4 border-l-2 border-sky-300 pl-3 text-xs italic text-gray-600">
+      <blockquote className="mt-4 border-l-2 border-sky-300 pl-3 text-xs italic text-muted-foreground">
         &ldquo;At Rise Wellness, we believe everyone has the capacity to rise
         above challenges and live a fulfilling, healthy life. Our care is
         guided by the belief that healing is personal, holistic, and rooted
         in compassion.&rdquo;
-        <span className="block not-italic mt-1 text-gray-500">
+        <span className="block not-italic mt-1 text-muted-foreground">
           — Rise Wellness of Indiana
         </span>
       </blockquote>
 
-      <p className="mt-4 text-[11px] leading-relaxed text-gray-500">
+      <p className="mt-4 text-[11px] leading-relaxed text-muted-foreground">
         Rise Wellness of Indiana is an independent organization. They are
         not affiliated with, employed by, or endorsed by Fly.WitUS,
         CentenarianOS, B4C LLC, AwesomeWebStore.com, or Anthony McDonald.

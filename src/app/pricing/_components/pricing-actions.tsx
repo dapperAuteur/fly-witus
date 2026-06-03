@@ -82,7 +82,7 @@ export function PricingActions({
       <div className="flex justify-center items-center gap-3">
         <span
           className={
-            billing === "monthly" ? "font-bold text-gray-900" : "text-gray-500"
+            billing === "monthly" ? "font-bold text-card-foreground" : "text-muted-foreground"
           }
         >
           Monthly
@@ -103,7 +103,7 @@ export function PricingActions({
         <span className="flex items-center gap-2">
           <span
             className={
-              billing === "annual" ? "font-bold text-gray-900" : "text-gray-500"
+              billing === "annual" ? "font-bold text-card-foreground" : "text-muted-foreground"
             }
           >
             Annual
@@ -116,36 +116,36 @@ export function PricingActions({
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* FREE */}
-        <div className="bg-white rounded-2xl shadow-lg p-6 border-t-4 border-gray-400 flex flex-col">
-          <h2 className="text-xl font-extrabold text-gray-900 mb-1">FREE</h2>
-          <p className="text-3xl font-extrabold text-gray-900">$0</p>
-          <p className="text-gray-500 text-sm mb-4">forever</p>
-          <ul className="space-y-2 text-sm text-gray-700 mb-6 flex-grow">
+        <div className="bg-card text-card-foreground rounded-2xl shadow-lg p-6 border-t-4 border-gray-400 flex flex-col">
+          <h2 className="text-xl font-extrabold text-card-foreground mb-1">FREE</h2>
+          <p className="text-3xl font-extrabold text-card-foreground">$0</p>
+          <p className="text-muted-foreground text-sm mb-4">forever</p>
+          <ul className="space-y-2 text-sm text-card-foreground mb-6 flex-grow">
             <li>✓ Pre-flight checklist</li>
             <li>✓ PDF export (FAA Part 107)</li>
             <li>✓ Local mission log</li>
-            <li className="text-gray-400">✗ Cloud sync</li>
-            <li className="text-gray-400">✗ Groups</li>
-            <li className="text-gray-400">✗ Analytics</li>
+            <li className="text-muted-foreground">✗ Cloud sync</li>
+            <li className="text-muted-foreground">✗ Groups</li>
+            <li className="text-muted-foreground">✗ Analytics</li>
           </ul>
           <Link
             href="/"
-            className="block text-center w-full py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-semibold transition"
+            className="block text-center w-full py-2 border border-border text-card-foreground rounded-lg hover:bg-muted font-semibold transition"
           >
             Use Free
           </Link>
         </div>
 
         {/* CLOUD */}
-        <div className="bg-white rounded-2xl shadow-lg p-6 border-t-4 border-sky-500 flex flex-col">
-          <h2 className="text-xl font-extrabold text-gray-900 mb-1">CLOUD</h2>
-          <p className="text-3xl font-extrabold text-gray-900">
+        <div className="bg-card text-card-foreground rounded-2xl shadow-lg p-6 border-t-4 border-sky-500 flex flex-col">
+          <h2 className="text-xl font-extrabold text-card-foreground mb-1">CLOUD</h2>
+          <p className="text-3xl font-extrabold text-card-foreground">
             {billing === "monthly" ? monthlyPrice : annualPrice}
           </p>
-          <p className="text-gray-500 text-sm mb-4">
+          <p className="text-muted-foreground text-sm mb-4">
             {billing === "monthly" ? "per month" : "per year"}
           </p>
-          <ul className="space-y-2 text-sm text-gray-700 mb-6 flex-grow">
+          <ul className="space-y-2 text-sm text-card-foreground mb-6 flex-grow">
             <li className="font-semibold">Everything in Free, plus:</li>
             <li>✓ Cloud sync across devices</li>
             <li>✓ Groups + flight requests</li>
@@ -167,25 +167,25 @@ export function PricingActions({
         </div>
 
         {/* LIFETIME */}
-        <div className="bg-white rounded-2xl shadow-lg p-6 border-t-4 border-fuchsia-500 flex flex-col">
+        <div className="bg-card text-card-foreground rounded-2xl shadow-lg p-6 border-t-4 border-fuchsia-500 flex flex-col">
           <div className="flex items-center justify-between mb-1">
-            <h2 className="text-xl font-extrabold text-gray-900">LIFETIME</h2>
+            <h2 className="text-xl font-extrabold text-card-foreground">LIFETIME</h2>
             {lifetimeAvailable ? (
               <span className="text-xs font-semibold text-fuchsia-700 bg-fuchsia-100 px-2 py-0.5 rounded-full">
                 ⚡ {standardSlotsRemaining} of {standardSlotsTotal} left
               </span>
             ) : (
-              <span className="text-xs font-semibold text-gray-700 bg-gray-200 px-2 py-0.5 rounded-full">
+              <span className="text-xs font-semibold text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
                 Sold Out
               </span>
             )}
           </div>
-          <p className="text-3xl font-extrabold text-gray-900">{lifetimeCardPrice}</p>
-          <p className="text-gray-500 text-sm mb-1">one-time</p>
-          <p className="text-gray-500 text-sm mb-4">
+          <p className="text-3xl font-extrabold text-card-foreground">{lifetimeCardPrice}</p>
+          <p className="text-muted-foreground text-sm mb-1">one-time</p>
+          <p className="text-muted-foreground text-sm mb-4">
             or {lifetimeCashAppPrice} via CashApp
           </p>
-          <ul className="space-y-2 text-sm text-gray-700 mb-6 flex-grow">
+          <ul className="space-y-2 text-sm text-card-foreground mb-6 flex-grow">
             <li className="font-semibold">Everything in Cloud, forever:</li>
             <li>✓ No renewal fees</li>
             <li>✓ All future features included</li>
@@ -211,7 +211,7 @@ export function PricingActions({
               </button>
             </div>
           ) : (
-            <p className="text-center text-sm text-gray-600 italic">
+            <p className="text-center text-sm text-muted-foreground italic">
               Watch this page for a re-open promo.
             </p>
           )}
@@ -228,7 +228,7 @@ export function PricingActions({
       )}
 
       {!session && !sessionLoading && (
-        <p className="text-center text-sm text-gray-500">
+        <p className="text-center text-sm text-muted-foreground">
           You&apos;ll need to{" "}
           <Link href="/login" className="text-sky-600 hover:underline">
             sign in

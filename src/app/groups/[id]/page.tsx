@@ -97,7 +97,7 @@ export default function GroupDashboardPage() {
   if (isPending || loading) {
     return (
       <main className="max-w-4xl mx-auto p-6">
-        <div className="h-8 w-48 bg-gray-100 rounded animate-pulse" />
+        <div className="h-8 w-48 bg-muted rounded animate-pulse" />
       </main>
     );
   }
@@ -105,7 +105,7 @@ export default function GroupDashboardPage() {
   if (!session) {
     return (
       <main className="max-w-4xl mx-auto p-6">
-        <p className="text-gray-600 mb-4">Sign in to view this group.</p>
+        <p className="text-muted-foreground mb-4">Sign in to view this group.</p>
         <Link
           href="/login"
           className="inline-block px-4 py-2 bg-sky-600 text-white rounded-lg hover:bg-sky-700 text-sm font-semibold"
@@ -153,15 +153,15 @@ export default function GroupDashboardPage() {
       </div>
       <h1 className="text-2xl font-bold">{data.group.name}</h1>
       {data.group.description && (
-        <p className="text-gray-600 mt-1">{data.group.description}</p>
+        <p className="text-muted-foreground mt-1">{data.group.description}</p>
       )}
-      <p className="text-sm text-gray-500 mt-2">
+      <p className="text-sm text-muted-foreground mt-2">
         {data.members.length} member{data.members.length === 1 ? "" : "s"} ·{" "}
         {data.sharedMissions.length} shared mission
         {data.sharedMissions.length === 1 ? "" : "s"}
       </p>
 
-      <div className="mt-6 border-b border-gray-200 flex gap-1 flex-wrap">
+      <div className="mt-6 border-b border-border flex gap-1 flex-wrap">
         <TabButton active={tab === "missions"} onClick={() => setTab("missions")}>
           Shared Missions
         </TabButton>
@@ -255,7 +255,7 @@ function RequestsTab({
   return (
     <div>
       <div className="flex items-center justify-between mb-3">
-        <h2 className="text-sm uppercase tracking-wide text-gray-500">
+        <h2 className="text-sm uppercase tracking-wide text-muted-foreground">
           {requests.length} request{requests.length === 1 ? "" : "s"}
         </h2>
         {!showForm && (
@@ -280,9 +280,9 @@ function RequestsTab({
       )}
 
       {error && <p className="text-sm text-red-600 mb-3">{error}</p>}
-      {loading && <div className="h-24 bg-gray-50 rounded animate-pulse" />}
+      {loading && <div className="h-24 bg-muted rounded animate-pulse" />}
       {!loading && requests.length === 0 && !showForm && (
-        <p className="text-sm text-gray-500 italic">
+        <p className="text-sm text-muted-foreground italic">
           No flight requests yet. Create one to ask a group member to fly a mission.
         </p>
       )}
@@ -357,7 +357,7 @@ function NewRequestForm({
   return (
     <form
       onSubmit={handleSubmit}
-      className="space-y-3 bg-sky-50 border border-sky-200 rounded-lg p-4 mb-4"
+      className="space-y-3 bg-sky-50 dark:bg-sky-950/30 border border-sky-200 dark:border-sky-900 rounded-lg p-4 mb-4"
     >
       {error && <p className="text-sm text-red-600">{error}</p>}
       <input
@@ -365,7 +365,7 @@ function NewRequestForm({
         required
         maxLength={160}
         placeholder="Title (e.g. BVC Episode 5 — Forest Footage)"
-        className="w-full px-3 py-2 border border-gray-300 rounded"
+        className="w-full px-3 py-2 border border-border rounded"
       />
       <textarea
         name="description"
@@ -373,15 +373,15 @@ function NewRequestForm({
         maxLength={2000}
         rows={3}
         placeholder="Describe what you need…"
-        className="w-full px-3 py-2 border border-gray-300 rounded"
+        className="w-full px-3 py-2 border border-border rounded"
       />
       <div className="grid grid-cols-2 gap-3">
         <label>
-          <span className="block text-xs font-medium text-gray-700 mb-1">Mission type</span>
+          <span className="block text-xs font-medium text-muted-foreground mb-1">Mission type</span>
           <select
             value={missionType}
             onChange={(e) => setMissionType(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded"
+            className="w-full px-3 py-2 border border-border rounded"
           >
             <option value="recreational">Recreational</option>
             <option value="bvc_primary_source">BVC Primary Source</option>
@@ -390,11 +390,11 @@ function NewRequestForm({
           </select>
         </label>
         <label>
-          <span className="block text-xs font-medium text-gray-700 mb-1">Priority</span>
+          <span className="block text-xs font-medium text-muted-foreground mb-1">Priority</span>
           <select
             name="priority"
             defaultValue="medium"
-            className="w-full px-3 py-2 border border-gray-300 rounded"
+            className="w-full px-3 py-2 border border-border rounded"
           >
             <option value="low">Low</option>
             <option value="medium">Medium</option>
@@ -406,42 +406,42 @@ function NewRequestForm({
         name="location"
         maxLength={200}
         placeholder="Location (optional)"
-        className="w-full px-3 py-2 border border-gray-300 rounded"
+        className="w-full px-3 py-2 border border-border rounded"
       />
       <label>
-        <span className="block text-xs font-medium text-gray-700 mb-1">Target date (optional)</span>
+        <span className="block text-xs font-medium text-muted-foreground mb-1">Target date (optional)</span>
         <input
           name="targetDate"
           type="date"
-          className="w-full px-3 py-2 border border-gray-300 rounded"
+          className="w-full px-3 py-2 border border-border rounded"
         />
       </label>
       {missionType === "bvc_primary_source" && (
-        <div className="space-y-2 border-t border-sky-200 pt-3">
+        <div className="space-y-2 border-t border-sky-200 dark:border-sky-900 pt-3">
           <input
             name="bvcEpisode"
             maxLength={120}
             placeholder="BVC episode (e.g. Episode 5 — Guayusa)"
-            className="w-full px-3 py-2 border border-gray-300 rounded"
+            className="w-full px-3 py-2 border border-border rounded"
           />
           <input
             name="wanderlearnCourseSlug"
             maxLength={120}
             placeholder="Wanderlearn course slug"
-            className="w-full px-3 py-2 border border-gray-300 rounded"
+            className="w-full px-3 py-2 border border-border rounded"
           />
           <input
             name="partnerInstitution"
             maxLength={160}
             placeholder="Partner institution"
-            className="w-full px-3 py-2 border border-gray-300 rounded"
+            className="w-full px-3 py-2 border border-border rounded"
           />
           <textarea
             name="academicPurpose"
             maxLength={500}
             rows={2}
             placeholder="Academic purpose"
-            className="w-full px-3 py-2 border border-gray-300 rounded"
+            className="w-full px-3 py-2 border border-border rounded"
           />
         </div>
       )}
@@ -456,7 +456,7 @@ function NewRequestForm({
         <button
           type="button"
           onClick={onCancel}
-          className="px-4 py-2 border border-gray-300 rounded text-sm font-semibold hover:bg-gray-50"
+          className="px-4 py-2 border border-border rounded text-sm font-semibold hover:bg-muted"
         >
           Cancel
         </button>
@@ -523,22 +523,22 @@ function RequestCard({
   };
 
   return (
-    <li className="bg-white border border-gray-200 rounded-lg p-4">
+    <li className="bg-card text-card-foreground border border-border rounded-lg p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <div className="text-xs uppercase tracking-wide text-gray-500 mb-1">
+          <div className="text-xs uppercase tracking-wide text-muted-foreground mb-1">
             <StatusBadge status={request.status} />{" "}
             <PriorityBadge priority={request.priority} />
           </div>
           <h3 className="font-semibold text-lg">{request.title}</h3>
-          <p className="text-xs text-gray-500 mt-0.5">
+          <p className="text-xs text-muted-foreground mt-0.5">
             Posted by {request.requesterName ?? "member"} on{" "}
             {new Date(request.createdAt).toLocaleDateString()}
           </p>
         </div>
       </div>
-      <p className="text-sm text-gray-700 mt-2 whitespace-pre-wrap">{request.description}</p>
-      <ul className="text-xs text-gray-600 mt-2 space-y-0.5">
+      <p className="text-sm text-muted-foreground mt-2 whitespace-pre-wrap">{request.description}</p>
+      <ul className="text-xs text-muted-foreground mt-2 space-y-0.5">
         {request.location && <li>📍 {request.location}</li>}
         {request.targetDate && (
           <li>📅 Target: {new Date(request.targetDate).toLocaleDateString()}</li>
@@ -592,7 +592,7 @@ function RequestCard({
           )}
         <button
           onClick={() => setShowComments((v) => !v)}
-          className="px-3 py-1.5 border border-gray-300 rounded text-sm hover:bg-gray-50"
+          className="px-3 py-1.5 border border-border rounded text-sm hover:bg-muted"
         >
           {showComments ? "Hide comments" : "Comments"}
         </button>
@@ -684,16 +684,16 @@ function CompleteRequestForm({
 
   if (loading) {
     return (
-      <div className="mt-3 pt-3 border-t border-gray-100">
-        <p className="text-sm text-gray-500">Loading your missions…</p>
+      <div className="mt-3 pt-3 border-t border-border">
+        <p className="text-sm text-muted-foreground">Loading your missions…</p>
       </div>
     );
   }
 
   if (missions.length === 0) {
     return (
-      <div className="mt-3 pt-3 border-t border-gray-100">
-        <p className="text-sm text-gray-700">
+      <div className="mt-3 pt-3 border-t border-border">
+        <p className="text-sm text-muted-foreground">
           You don&apos;t have any saved missions to link yet. Save a mission first, then come back.
         </p>
       </div>
@@ -703,13 +703,13 @@ function CompleteRequestForm({
   return (
     <form
       onSubmit={handleSubmit}
-      className="mt-3 pt-3 border-t border-gray-100 space-y-2"
+      className="mt-3 pt-3 border-t border-border space-y-2"
     >
       {error && <p className="text-sm text-red-600">{error}</p>}
       <select
         name="missionId"
         defaultValue=""
-        className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+        className="w-full px-3 py-2 border border-border rounded text-sm"
       >
         <option value="" disabled>
           Pick the mission you flew for this request…
@@ -720,7 +720,7 @@ function CompleteRequestForm({
           </option>
         ))}
       </select>
-      <p className="text-xs text-gray-500">
+      <p className="text-xs text-muted-foreground">
         Linking auto-shares this mission to the group and emails the requester.
       </p>
       <button
@@ -792,16 +792,16 @@ function CommentsThread({ groupId, requestId }: { groupId: string; requestId: st
   };
 
   return (
-    <div className="mt-3 pt-3 border-t border-gray-100">
-      {loading && <p className="text-sm text-gray-500">Loading comments…</p>}
+    <div className="mt-3 pt-3 border-t border-border">
+      {loading && <p className="text-sm text-muted-foreground">Loading comments…</p>}
       {error && <p className="text-sm text-red-600 mb-2">{error}</p>}
       {!loading && comments.length === 0 && (
-        <p className="text-sm text-gray-500 italic mb-2">No comments yet.</p>
+        <p className="text-sm text-muted-foreground italic mb-2">No comments yet.</p>
       )}
       <ul className="space-y-2 mb-3">
         {comments.map((c) => (
-          <li key={c.id} className="text-sm bg-gray-50 rounded p-2">
-            <div className="text-xs text-gray-500 mb-0.5">
+          <li key={c.id} className="text-sm bg-muted rounded p-2">
+            <div className="text-xs text-muted-foreground mb-0.5">
               {c.authorName ?? c.authorEmail} ·{" "}
               {new Date(c.createdAt).toLocaleString()}
             </div>
@@ -815,7 +815,7 @@ function CommentsThread({ groupId, requestId }: { groupId: string; requestId: st
           onChange={(e) => setText(e.target.value)}
           maxLength={2000}
           placeholder="Add a comment…"
-          className="flex-1 px-3 py-2 border border-gray-300 rounded text-sm"
+          className="flex-1 px-3 py-2 border border-border rounded text-sm"
         />
         <button
           type="submit"
@@ -835,7 +835,7 @@ function StatusBadge({ status }: { status: FlightRequestRow["status"] }) {
     claimed: "bg-amber-100 text-amber-800",
     in_progress: "bg-amber-100 text-amber-800",
     completed: "bg-green-100 text-green-800",
-    cancelled: "bg-gray-100 text-gray-600",
+    cancelled: "bg-muted text-muted-foreground",
   };
   return (
     <span
@@ -872,7 +872,7 @@ function TabButton({
       className={`px-4 py-2 text-sm font-semibold border-b-2 -mb-px ${
         active
           ? "border-sky-600 text-sky-700"
-          : "border-transparent text-gray-600 hover:text-gray-900"
+          : "border-transparent text-muted-foreground hover:text-foreground"
       }`}
     >
       {children}
@@ -883,7 +883,7 @@ function TabButton({
 function MissionsTab({ shares }: { shares: SharedMissionRow[] }) {
   if (shares.length === 0) {
     return (
-      <p className="text-sm text-gray-500 italic">
+      <p className="text-sm text-muted-foreground italic">
         No missions shared to this group yet. Share one from your dashboard.
       </p>
     );
@@ -891,18 +891,18 @@ function MissionsTab({ shares }: { shares: SharedMissionRow[] }) {
   return (
     <ul className="space-y-3">
       {shares.map((s) => (
-        <li key={s.shareId} className="bg-white border border-gray-200 rounded-lg p-4">
-          <div className="text-xs text-gray-500 mb-1">
+        <li key={s.shareId} className="bg-card text-card-foreground border border-border rounded-lg p-4">
+          <div className="text-xs text-muted-foreground mb-1">
             {s.sharedByName ?? "Member"} shared on{" "}
             {new Date(s.sharedAt).toLocaleDateString()}
           </div>
           <div className="font-semibold">
             Mission {s.mission.missionNumber}{" "}
-            <span className="text-gray-500 font-normal text-sm">
+            <span className="text-muted-foreground font-normal text-sm">
               · {new Date(s.mission.timestamp).toLocaleDateString()}
             </span>
           </div>
-          <div className="text-sm text-gray-700 mt-1">
+          <div className="text-sm text-muted-foreground mt-1">
             {[
               s.mission.location,
               s.mission.aircraftType,
@@ -912,10 +912,10 @@ function MissionsTab({ shares }: { shares: SharedMissionRow[] }) {
               .join(" · ")}
           </div>
           {s.note && (
-            <p className="text-sm text-gray-600 mt-2 italic">&ldquo;{s.note}&rdquo;</p>
+            <p className="text-sm text-muted-foreground mt-2 italic">&ldquo;{s.note}&rdquo;</p>
           )}
           {s.mission.flights.length > 0 && (
-            <p className="text-xs text-gray-500 mt-2">
+            <p className="text-xs text-muted-foreground mt-2">
               {s.mission.flights.length} flight
               {s.mission.flights.length === 1 ? "" : "s"} ·{" "}
               {s.mission.photos.length} photo
@@ -934,15 +934,15 @@ function MembersTab({ members }: { members: MemberRow[] }) {
       {members.map((m) => (
         <li
           key={m.id}
-          className="bg-white border border-gray-200 rounded-lg p-3 flex items-center justify-between"
+          className="bg-card text-card-foreground border border-border rounded-lg p-3 flex items-center justify-between"
         >
           <div>
             <div className="font-semibold">{m.displayName ?? m.email}</div>
-            <div className="text-xs text-gray-500">
+            <div className="text-xs text-muted-foreground">
               Joined {new Date(m.joinedAt).toLocaleDateString()}
             </div>
           </div>
-          <span className="text-xs uppercase tracking-wide text-gray-600">
+          <span className="text-xs uppercase tracking-wide text-muted-foreground">
             {m.role}
           </span>
         </li>
@@ -992,21 +992,21 @@ function InviteTab({
 
   return (
     <div className="space-y-4">
-      <div className="bg-white border border-gray-200 rounded-lg p-4">
-        <div className="text-xs uppercase tracking-wide text-gray-500 mb-2">
+      <div className="bg-card text-card-foreground border border-border rounded-lg p-4">
+        <div className="text-xs uppercase tracking-wide text-muted-foreground mb-2">
           Invite Code
         </div>
         <div className="font-mono text-2xl tracking-wider mb-3">{group.inviteCode}</div>
-        <div className="text-xs text-gray-500 mb-1">Share this link:</div>
+        <div className="text-xs text-muted-foreground mb-1">Share this link:</div>
         <div className="flex gap-2 items-center">
           <input
             readOnly
             value={inviteUrl}
-            className="flex-1 px-3 py-2 border border-gray-300 rounded text-sm font-mono"
+            className="flex-1 px-3 py-2 border border-border rounded text-sm font-mono"
           />
           <button
             onClick={handleCopy}
-            className="px-3 py-2 border border-gray-300 rounded text-sm hover:bg-gray-50"
+            className="px-3 py-2 border border-border rounded text-sm hover:bg-muted"
           >
             {copied ? "Copied!" : "Copy"}
           </button>

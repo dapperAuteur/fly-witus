@@ -48,7 +48,7 @@ export default async function AdminUsersPage(props: {
             name="q"
             defaultValue={q}
             placeholder="Search email or name…"
-            className="px-3 py-2 border border-gray-300 rounded text-sm w-64"
+            className="px-3 py-2 border border-border rounded text-sm w-64"
           />
           <button
             type="submit"
@@ -62,14 +62,14 @@ export default async function AdminUsersPage(props: {
       <UsersTable users={rows} />
 
       <div className="flex items-center justify-between text-sm">
-        <span className="text-gray-500">
+        <span className="text-muted-foreground">
           Page {page} · {rows.length} row{rows.length === 1 ? "" : "s"}
         </span>
         <div className="flex gap-2">
           {page > 1 && (
             <Link
               href={`?${new URLSearchParams({ q, page: String(page - 1) }).toString()}`}
-              className="px-3 py-1.5 border border-gray-300 rounded hover:bg-gray-50"
+              className="px-3 py-1.5 border border-border rounded hover:bg-muted"
             >
               ← Prev
             </Link>
@@ -77,7 +77,7 @@ export default async function AdminUsersPage(props: {
           {rows.length === PAGE_SIZE && (
             <Link
               href={`?${new URLSearchParams({ q, page: String(page + 1) }).toString()}`}
-              className="px-3 py-1.5 border border-gray-300 rounded hover:bg-gray-50"
+              className="px-3 py-1.5 border border-border rounded hover:bg-muted"
             >
               Next →
             </Link>

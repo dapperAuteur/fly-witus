@@ -96,7 +96,7 @@ export function CashAppQueue({ rows }: Props) {
         return (
           <div
             key={row.id}
-            className="bg-white rounded-2xl shadow p-4 border-l-4"
+            className="bg-card text-card-foreground rounded-2xl shadow p-4 border-l-4"
             style={{
               borderLeftColor:
                 row.status === "verified"
@@ -110,13 +110,13 @@ export function CashAppQueue({ rows }: Props) {
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 flex-wrap">
                   <StatusBadge status={row.status} tier={row.tier} />
-                  <span className="text-xs text-gray-500">{ageLabel}</span>
+                  <span className="text-xs text-muted-foreground">{ageLabel}</span>
                 </div>
-                <p className="mt-1 font-semibold text-gray-900 break-all">
+                <p className="mt-1 font-semibold text-card-foreground break-all">
                   {row.email}
                 </p>
-                <p className="text-sm text-gray-700 font-mono break-all">
-                  {row.cashappUsername || <em className="text-gray-400">no username</em>}
+                <p className="text-sm text-card-foreground font-mono break-all">
+                  {row.cashappUsername || <em className="text-muted-foreground">no username</em>}
                 </p>
                 {row.status === "rejected" && row.rejectionReason && (
                   <p className="mt-1 text-xs text-red-700">
@@ -124,7 +124,7 @@ export function CashAppQueue({ rows }: Props) {
                   </p>
                 )}
                 {row.status === "verified" && row.activatedAtIso && (
-                  <p className="mt-1 text-xs text-gray-500">
+                  <p className="mt-1 text-xs text-muted-foreground">
                     Activated {new Date(row.activatedAtIso).toLocaleString()}
                   </p>
                 )}
@@ -148,7 +148,7 @@ export function CashAppQueue({ rows }: Props) {
                       setError(null);
                     }}
                     disabled={busyId !== null}
-                    className="px-3 py-1.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm font-semibold transition disabled:opacity-50"
+                    className="px-3 py-1.5 border border-border text-card-foreground rounded-lg hover:bg-muted text-sm font-semibold transition disabled:opacity-50"
                   >
                     Reject ▾
                   </button>
@@ -157,8 +157,8 @@ export function CashAppQueue({ rows }: Props) {
             </div>
 
             {mode === "rejecting" && (
-              <div className="mt-3 border-t border-gray-200 pt-3">
-                <label className="block text-sm font-semibold text-gray-700 mb-1">
+              <div className="mt-3 border-t border-border pt-3">
+                <label className="block text-sm font-semibold text-card-foreground mb-1">
                   Rejection reason (sent to user)
                 </label>
                 <textarea
@@ -166,7 +166,7 @@ export function CashAppQueue({ rows }: Props) {
                   onChange={(e) => setRejectReason(e.target.value)}
                   rows={2}
                   placeholder="e.g. Could not find your CashApp transaction in the last 24 hours."
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm"
+                  className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm"
                   autoFocus
                 />
                 <div className="mt-2 flex gap-2 justify-end">
@@ -177,7 +177,7 @@ export function CashAppQueue({ rows }: Props) {
                       setRejectReason("");
                     }}
                     disabled={busyId !== null}
-                    className="px-3 py-1.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm font-semibold transition"
+                    className="px-3 py-1.5 border border-border text-card-foreground rounded-lg hover:bg-muted text-sm font-semibold transition"
                   >
                     Cancel
                   </button>

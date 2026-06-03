@@ -25,7 +25,7 @@ export default async function AdminGroupsPage() {
     return (
       <div className="space-y-6">
         <h1 className="text-2xl font-bold">Groups</h1>
-        <p className="text-sm text-gray-500 italic">No groups created yet.</p>
+        <p className="text-sm text-muted-foreground italic">No groups created yet.</p>
       </div>
     );
   }
@@ -49,9 +49,9 @@ export default async function AdminGroupsPage() {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">Groups</h1>
-      <div className="bg-white border border-gray-200 rounded-lg overflow-x-auto">
+      <div className="bg-card text-card-foreground border border-border rounded-lg overflow-x-auto">
         <table className="w-full text-sm">
-          <thead className="bg-gray-50 text-left text-xs uppercase tracking-wide text-gray-600">
+          <thead className="bg-muted text-left text-xs uppercase tracking-wide text-muted-foreground">
             <tr>
               <th className="px-3 py-2">Name</th>
               <th className="px-3 py-2">Owner</th>
@@ -62,19 +62,19 @@ export default async function AdminGroupsPage() {
           </thead>
           <tbody>
             {rows.map((r) => (
-              <tr key={r.id} className="border-t border-gray-100">
+              <tr key={r.id} className="border-t border-border">
                 <td className="px-3 py-2">
                   <div className="font-semibold">{r.name}</div>
                   {r.description && (
-                    <div className="text-xs text-gray-500 truncate max-w-md">
+                    <div className="text-xs text-muted-foreground truncate max-w-md">
                       {r.description}
                     </div>
                   )}
                 </td>
-                <td className="px-3 py-2 text-gray-700">{r.ownerEmail}</td>
+                <td className="px-3 py-2 text-card-foreground">{r.ownerEmail}</td>
                 <td className="px-3 py-2">{memberCounts.get(r.id) ?? 0}</td>
                 <td className="px-3 py-2">{sharedCounts.get(r.id) ?? 0}</td>
-                <td className="px-3 py-2 text-xs text-gray-600">
+                <td className="px-3 py-2 text-xs text-muted-foreground">
                   {new Date(r.createdAt).toLocaleDateString()}
                 </td>
               </tr>

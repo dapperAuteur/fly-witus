@@ -64,7 +64,7 @@ export function PromosManager({
       )}
 
       {promos.length === 0 ? (
-        <p className="text-sm text-gray-500 italic">No promos yet.</p>
+        <p className="text-sm text-muted-foreground italic">No promos yet.</p>
       ) : (
         <ul className="space-y-2">
           {promos.map((p) => (
@@ -137,7 +137,7 @@ function PromoRow({
   };
 
   return (
-    <li className="bg-white border border-gray-200 rounded-lg p-4">
+    <li className="bg-card text-card-foreground border border-border rounded-lg p-4">
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div className="min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
@@ -145,13 +145,13 @@ function PromoRow({
             <TypeBadge type={promo.type} />
             <ActiveBadge active={promo.isActive} />
           </div>
-          <p className="text-sm text-gray-700 mt-1">{describePromo(promo)}</p>
+          <p className="text-sm text-card-foreground mt-1">{describePromo(promo)}</p>
           {promo.bannerText && (
-            <p className="text-xs text-gray-500 italic mt-1">
+            <p className="text-xs text-muted-foreground italic mt-1">
               Banner: &ldquo;{promo.bannerText}&rdquo;
             </p>
           )}
-          <p className="text-xs text-gray-500 mt-2">
+          <p className="text-xs text-muted-foreground mt-2">
             {promo.startsAt && `Starts ${new Date(promo.startsAt).toLocaleDateString()} `}
             {promo.endsAt && `· Ends ${new Date(promo.endsAt).toLocaleDateString()} `}
             {promo.stripeCouponId && (
@@ -165,7 +165,7 @@ function PromoRow({
           <button
             onClick={toggleActive}
             disabled={busy}
-            className="px-3 py-1.5 border border-gray-300 rounded text-sm hover:bg-gray-50 disabled:opacity-50"
+            className="px-3 py-1.5 border border-border rounded text-sm hover:bg-muted disabled:opacity-50"
           >
             {promo.isActive ? "Deactivate" : "Activate"}
           </button>
@@ -275,7 +275,7 @@ function NewPromoForm({
   return (
     <form
       onSubmit={submit}
-      className="bg-sky-50 border border-sky-200 rounded-lg p-4 space-y-3"
+      className="bg-sky-50 dark:bg-sky-950/30 border border-sky-200 dark:border-sky-900 rounded-lg p-4 space-y-3"
     >
       {error && <p className="text-sm text-red-600">{error}</p>}
       <input
@@ -283,15 +283,15 @@ function NewPromoForm({
         required
         maxLength={160}
         placeholder="Internal name (e.g. Show HN launch)"
-        className="w-full px-3 py-2 border border-gray-300 rounded"
+        className="w-full px-3 py-2 border border-border rounded"
       />
       <div className="grid grid-cols-2 gap-3">
         <label>
-          <span className="block text-xs font-medium text-gray-700 mb-1">Type</span>
+          <span className="block text-xs font-medium text-card-foreground mb-1">Type</span>
           <select
             value={type}
             onChange={(e) => setType(e.target.value as PromoType)}
-            className="w-full px-3 py-2 border border-gray-300 rounded"
+            className="w-full px-3 py-2 border border-border rounded"
           >
             <option value="discount">Discount</option>
             <option value="lifetime_reopen">Lifetime re-open</option>
@@ -307,23 +307,23 @@ function NewPromoForm({
         name="bannerText"
         maxLength={280}
         placeholder="Banner text shown on /pricing (optional)"
-        className="w-full px-3 py-2 border border-gray-300 rounded"
+        className="w-full px-3 py-2 border border-border rounded"
       />
       <div className="grid grid-cols-2 gap-3">
         <label>
-          <span className="block text-xs font-medium text-gray-700 mb-1">Starts</span>
+          <span className="block text-xs font-medium text-card-foreground mb-1">Starts</span>
           <input
             name="startsAt"
             type="datetime-local"
-            className="w-full px-3 py-2 border border-gray-300 rounded"
+            className="w-full px-3 py-2 border border-border rounded"
           />
         </label>
         <label>
-          <span className="block text-xs font-medium text-gray-700 mb-1">Ends</span>
+          <span className="block text-xs font-medium text-card-foreground mb-1">Ends</span>
           <input
             name="endsAt"
             type="datetime-local"
-            className="w-full px-3 py-2 border border-gray-300 rounded"
+            className="w-full px-3 py-2 border border-border rounded"
           />
         </label>
       </div>
@@ -331,33 +331,33 @@ function NewPromoForm({
       {type === "lifetime_reopen" && (
         <div className="grid grid-cols-3 gap-3 border-t border-sky-200 pt-3">
           <label>
-            <span className="block text-xs font-medium text-gray-700 mb-1">Card price</span>
+            <span className="block text-xs font-medium text-card-foreground mb-1">Card price</span>
             <input
               name="lifetimePriceCard"
               type="number"
               step="0.01"
               min="0"
-              className="w-full px-3 py-2 border border-gray-300 rounded"
+              className="w-full px-3 py-2 border border-border rounded"
             />
           </label>
           <label>
-            <span className="block text-xs font-medium text-gray-700 mb-1">CashApp price</span>
+            <span className="block text-xs font-medium text-card-foreground mb-1">CashApp price</span>
             <input
               name="lifetimePriceCashapp"
               type="number"
               step="0.01"
               min="0"
-              className="w-full px-3 py-2 border border-gray-300 rounded"
+              className="w-full px-3 py-2 border border-border rounded"
             />
           </label>
           <label>
-            <span className="block text-xs font-medium text-gray-700 mb-1">Slots</span>
+            <span className="block text-xs font-medium text-card-foreground mb-1">Slots</span>
             <input
               name="lifetimeSlots"
               type="number"
               min="1"
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded"
+              className="w-full px-3 py-2 border border-border rounded"
             />
           </label>
         </div>
@@ -372,33 +372,33 @@ function NewPromoForm({
           )}
           <div className="grid grid-cols-3 gap-3">
             <label>
-              <span className="block text-xs font-medium text-gray-700 mb-1">Kind</span>
+              <span className="block text-xs font-medium text-card-foreground mb-1">Kind</span>
               <select
                 name="discountKind"
                 defaultValue="percent"
-                className="w-full px-3 py-2 border border-gray-300 rounded"
+                className="w-full px-3 py-2 border border-border rounded"
               >
                 <option value="percent">Percent</option>
                 <option value="fixed">Fixed ($)</option>
               </select>
             </label>
             <label>
-              <span className="block text-xs font-medium text-gray-700 mb-1">Amount</span>
+              <span className="block text-xs font-medium text-card-foreground mb-1">Amount</span>
               <input
                 name="discountAmount"
                 type="number"
                 step="0.01"
                 min="0"
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded"
+                className="w-full px-3 py-2 border border-border rounded"
               />
             </label>
             <label>
-              <span className="block text-xs font-medium text-gray-700 mb-1">Applies to</span>
+              <span className="block text-xs font-medium text-card-foreground mb-1">Applies to</span>
               <select
                 name="appliesTo"
                 defaultValue="both"
-                className="w-full px-3 py-2 border border-gray-300 rounded"
+                className="w-full px-3 py-2 border border-border rounded"
               >
                 <option value="both">Monthly + Annual</option>
                 <option value="monthly">Monthly only</option>
@@ -408,18 +408,18 @@ function NewPromoForm({
           </div>
           <div className="grid grid-cols-2 gap-3">
             <label>
-              <span className="block text-xs font-medium text-gray-700 mb-1">
+              <span className="block text-xs font-medium text-card-foreground mb-1">
                 Promo code (optional)
               </span>
               <input
                 name="promoCode"
                 maxLength={40}
                 placeholder="LAUNCH50"
-                className="w-full px-3 py-2 border border-gray-300 rounded font-mono uppercase"
+                className="w-full px-3 py-2 border border-border rounded font-mono uppercase"
               />
             </label>
             <label>
-              <span className="block text-xs font-medium text-gray-700 mb-1">
+              <span className="block text-xs font-medium text-card-foreground mb-1">
                 Max redemptions
               </span>
               <input
@@ -427,7 +427,7 @@ function NewPromoForm({
                 type="number"
                 min="1"
                 placeholder="(no cap)"
-                className="w-full px-3 py-2 border border-gray-300 rounded"
+                className="w-full px-3 py-2 border border-border rounded"
               />
             </label>
           </div>
@@ -445,7 +445,7 @@ function NewPromoForm({
         <button
           type="button"
           onClick={onCancel}
-          className="px-4 py-2 border border-gray-300 rounded text-sm font-semibold hover:bg-gray-50"
+          className="px-4 py-2 border border-border rounded text-sm font-semibold hover:bg-muted"
         >
           Cancel
         </button>
@@ -458,7 +458,7 @@ function TypeBadge({ type }: { type: PromoType }) {
   const cls: Record<PromoType, string> = {
     lifetime_reopen: "bg-purple-100 text-purple-800",
     discount: "bg-sky-100 text-sky-800",
-    trial: "bg-gray-100 text-gray-700",
+    trial: "bg-muted text-card-foreground",
   };
   return (
     <span className={`px-2 py-0.5 rounded text-xs font-semibold ${cls[type]}`}>
@@ -471,7 +471,7 @@ function ActiveBadge({ active }: { active: boolean }) {
   return (
     <span
       className={`px-2 py-0.5 rounded text-xs font-semibold ${
-        active ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-600"
+        active ? "bg-green-100 text-green-800" : "bg-muted text-muted-foreground"
       }`}
     >
       {active ? "ACTIVE" : "INACTIVE"}

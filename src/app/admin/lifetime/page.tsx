@@ -46,9 +46,9 @@ export default async function AdminLifetimePage() {
             />
           </section>
 
-          <section className="bg-white border border-gray-200 rounded-lg p-4">
+          <section className="bg-card text-card-foreground border border-border rounded-lg p-4">
             <h2 className="font-semibold mb-3">Reconcile</h2>
-            <p className="text-sm text-gray-600 mb-2">
+            <p className="text-sm text-muted-foreground mb-2">
               Counter says {counter.standardSlotsUsed} standard lifetime sales used.
               Database currently has{" "}
               <strong>{actualLifetime}</strong> users on the lifetime tier (includes
@@ -82,11 +82,11 @@ function Stat({
 }) {
   const accentCls =
     accent === "amber"
-      ? "bg-amber-50 border-amber-300"
-      : "bg-white border-gray-200";
+      ? "bg-amber-50 dark:bg-amber-950/30 border-amber-300 dark:border-amber-900 text-card-foreground"
+      : "bg-card text-card-foreground border-border";
   return (
     <div className={`border rounded-lg p-4 ${accentCls}`}>
-      <div className="text-xs uppercase tracking-wide text-gray-500">{label}</div>
+      <div className="text-xs uppercase tracking-wide text-muted-foreground">{label}</div>
       <div className="text-2xl font-bold mt-1">{value}</div>
     </div>
   );

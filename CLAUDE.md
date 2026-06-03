@@ -20,6 +20,25 @@ Full rule with rationale and reference task: `/Users/bam/Code_NOiCloud/ai-builds
 
 ---
 
+## Docs-currency rule — docs ship with the change, never "later"
+
+A change is not done until the docs that describe it are updated **in the same branch/PR**. Stale docs are a defect, not a follow-up task. When code changes user-facing behavior, a surface, an operator step, or the public API, update the matching docs in the same commit set.
+
+Apply whichever rows fit the change:
+
+| Change | Update |
+|---|---|
+| New / changed / removed **route or page** | `README.md` "API surface" + "Admin" tables and the project-structure block |
+| New **user-facing feature or capability** | `README.md` "What it does" **and** an in-app help doc in `src/content/help/docs.ts` (append/extend a `HelpDoc` — the `/help` index + fuzzy search pick it up automatically). For account/self-service flows also `docs/account-management.md` |
+| New **env var / secret / vendor** | `README.md` env list **and** an operator task (per the Operator-task rule) |
+| New **migration** | reference it in the relevant migration operator task so BAM runs it on prod |
+| New **cron** | `README.md` Tech/cron line **and** `vercel.json` |
+| Changed **pricing, plans, or nav** | `README.md` "Plans" / the relevant section |
+
+Pre-handoff check: would the `README.md`, the in-app `/help` guide, and the `plans/user-tasks/00-descriptions.md` index each still read correctly to someone seeing them cold? If not, fix them in this branch before pushing.
+
+---
+
 ## Branch hygiene — BAM merges, between sessions by default
 
 **Half 1.** End-of-branch contract: branch → commit → push → stop. Claude does not run `git checkout main && git merge`. Never `--force` to shared branches. After push, hand back the branch name + summary and stop.

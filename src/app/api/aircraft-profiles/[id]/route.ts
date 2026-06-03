@@ -15,18 +15,26 @@ export async function GET(_req: Request, ctx: Params) {
   if (userOrRes instanceof NextResponse) return userOrRes;
 
   const { id } = await ctx.params;
-  const [profile] = await db
-    .select()
-    .from(aircraftProfiles)
-    .where(
-      and(eq(aircraftProfiles.id, id), eq(aircraftProfiles.userId, userOrRes.id)),
-    )
-    .limit(1);
+  try {
+    const [profile] = await db
+      .select()
+      .from(aircraftProfiles)
+      .where(
+        and(eq(aircraftProfiles.id, id), eq(aircraftProfiles.userId, userOrRes.id)),
+      )
+      .limit(1);
 
-  if (!profile) {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
+    if (!profile) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+    return NextResponse.json({ profile });
+  } catch (err) {
+    console.error("[GET /api/aircraft-profiles/[id]]", err);
+    return NextResponse.json(
+      { error: "Failed to load aircraft profile" },
+      { status: 500 },
+    );
   }
-  return NextResponse.json({ profile });
 }
 
 export async function PATCH(req: Request, ctx: Params) {

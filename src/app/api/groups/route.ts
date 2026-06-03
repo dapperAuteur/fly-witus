@@ -12,8 +12,19 @@ export async function GET() {
   const userOrRes = await requirePaidUser();
   if (userOrRes instanceof NextResponse) return userOrRes;
 
-  const list = await listUserGroups(userOrRes.id);
-  return NextResponse.json({ groups: list });
+  try {
+    const list = await listUserGroups(userOrRes.id);
+    return NextResponse.json({ groups: list });
+  } catch (err) {
+    // Most likely cause in prod: the groups tables are missing because
+    // migration 0004 was never applied. Log the real error instead of
+    // surfacing a bare 500 with no detail.
+    console.error("[GET /api/groups]", err);
+    return NextResponse.json(
+      { error: "Failed to load groups" },
+      { status: 500 },
+    );
+  }
 }
 
 // POST /api/groups — create a group; creator is auto-added as owner.

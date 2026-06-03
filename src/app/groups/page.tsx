@@ -38,7 +38,14 @@ export default function GroupsListPage() {
           return;
         }
       }
-      if (!res.ok) throw new Error(`Failed to load groups (HTTP ${res.status})`);
+      if (!res.ok) {
+        const json = await res.json().catch(() => ({}));
+        throw new Error(
+          json.error
+            ? `${json.error} (HTTP ${res.status})`
+            : `Failed to load groups (HTTP ${res.status})`,
+        );
+      }
       const json = await res.json();
       setGroups(json.groups ?? []);
     } catch (err) {
@@ -85,7 +92,7 @@ export default function GroupsListPage() {
     return (
       <main className="max-w-4xl mx-auto p-6">
         <h1 className="text-2xl font-bold mb-4">Groups</h1>
-        <p className="text-gray-600 mb-4">
+        <p className="text-muted-foreground mb-4">
           Sign in to view your groups and join via invite code.
         </p>
         <Link
@@ -134,7 +141,7 @@ export default function GroupsListPage() {
         {error && <p className="text-sm text-red-600 mb-3">{error}</p>}
         {loading && <div className="h-24 bg-gray-50 rounded animate-pulse" />}
         {!loading && groups.length === 0 && (
-          <p className="text-sm text-gray-500 italic">
+          <p className="text-sm text-muted-foreground italic">
             You&apos;re not in any groups yet. Create one or join via invite code below.
           </p>
         )}
@@ -143,18 +150,18 @@ export default function GroupsListPage() {
             <li key={g.id}>
               <Link
                 href={`/groups/${g.id}`}
-                className="block bg-white border border-gray-200 rounded-lg p-4 hover:border-sky-300 hover:shadow-sm transition"
+                className="block bg-card text-card-foreground border border-border rounded-lg p-4 hover:border-sky-300 hover:shadow-sm transition"
               >
                 <div className="flex items-baseline justify-between gap-3">
                   <h2 className="font-semibold text-lg">{g.name}</h2>
-                  <span className="text-xs uppercase tracking-wide text-gray-500">
+                  <span className="text-xs uppercase tracking-wide text-muted-foreground">
                     {g.role}
                   </span>
                 </div>
                 {g.description && (
-                  <p className="text-sm text-gray-600 mt-1">{g.description}</p>
+                  <p className="text-sm text-muted-foreground mt-1">{g.description}</p>
                 )}
-                <p className="text-xs text-gray-500 mt-2">
+                <p className="text-xs text-muted-foreground mt-2">
                   {g.memberCount} member{g.memberCount === 1 ? "" : "s"} ·{" "}
                   {g.sharedMissionCount} shared mission
                   {g.sharedMissionCount === 1 ? "" : "s"}
@@ -165,7 +172,7 @@ export default function GroupsListPage() {
         </ul>
       </section>
 
-      <section className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+      <section className="bg-muted border border-border rounded-lg p-4">
         <h2 className="font-semibold mb-2">Join with invite code</h2>
         <form onSubmit={handleJoin} className="flex gap-2">
           <input
@@ -173,7 +180,7 @@ export default function GroupsListPage() {
             onChange={(e) => setJoinCode(e.target.value)}
             placeholder="A7K2X9P3"
             maxLength={20}
-            className="flex-1 px-3 py-2 border border-gray-300 rounded font-mono uppercase tracking-wider"
+            className="flex-1 px-3 py-2 border border-border rounded font-mono uppercase tracking-wider"
           />
           <button
             type="submit"

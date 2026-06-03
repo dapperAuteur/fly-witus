@@ -2,6 +2,8 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ServiceWorkerRegistration } from "./_components/sw-register";
+import { AppNav } from "@/components/app-nav";
+import { HelpBubble } from "@/components/help-bubble";
 import { SiteFooter } from "@/components/site-footer";
 
 const geistSans = Geist({
@@ -48,8 +50,10 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <ServiceWorkerRegistration />
+        <AppNav />
         {children}
         <SiteFooter />
+        <HelpBubble />
       </body>
     </html>
   );

@@ -42,7 +42,7 @@ export default function NewGroupPage() {
   if (isPending) {
     return (
       <main className="max-w-2xl mx-auto p-6">
-        <div className="h-8 w-48 bg-gray-100 rounded animate-pulse" />
+        <div className="h-8 w-48 bg-muted rounded animate-pulse" />
       </main>
     );
   }
@@ -51,7 +51,7 @@ export default function NewGroupPage() {
     return (
       <main className="max-w-2xl mx-auto p-6">
         <h1 className="text-2xl font-bold mb-4">Create a Group</h1>
-        <p className="text-gray-600 mb-4">Sign in to create a group.</p>
+        <p className="text-muted-foreground mb-4">Sign in to create a group.</p>
         <Link
           href="/login"
           className="inline-block px-4 py-2 bg-sky-600 text-white rounded-lg hover:bg-sky-700 text-sm font-semibold"
@@ -73,11 +73,11 @@ export default function NewGroupPage() {
 
       <form
         onSubmit={handleSubmit}
-        className="space-y-4 bg-white border border-gray-200 rounded-lg p-5"
+        className="space-y-4 bg-card text-card-foreground border border-border rounded-lg p-5"
       >
         {error && <p className="text-sm text-red-600">{error}</p>}
         <label className="block">
-          <span className="block text-sm font-medium text-gray-700 mb-1">
+          <span className="block text-sm font-medium text-card-foreground mb-1">
             Group name (required)
           </span>
           <input
@@ -85,17 +85,17 @@ export default function NewGroupPage() {
             required
             maxLength={80}
             placeholder="High Desert Flyers"
-            className="w-full px-3 py-2 border border-gray-300 rounded"
+            className="w-full px-3 py-2 border border-border rounded"
           />
         </label>
         <label className="block">
-          <span className="block text-sm font-medium text-gray-700 mb-1">Description</span>
+          <span className="block text-sm font-medium text-card-foreground mb-1">Description</span>
           <textarea
             name="description"
             maxLength={500}
             rows={3}
             placeholder="What is this group about?"
-            className="w-full px-3 py-2 border border-gray-300 rounded"
+            className="w-full px-3 py-2 border border-border rounded"
           />
         </label>
         <button

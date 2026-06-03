@@ -54,7 +54,7 @@ const RoadmapComponent: React.FC = () => {
       case 'high': return 'bg-red-100 text-red-700 border-red-300';
       case 'medium': return 'bg-amber-100 text-amber-700 border-amber-300';
       case 'low': return 'bg-blue-100 text-blue-700 border-blue-300';
-      default: return 'bg-gray-100 text-gray-700 border-gray-300';
+      default: return 'bg-gray-100 text-card-foreground border-gray-300';
     }
   };
 
@@ -68,7 +68,7 @@ const RoadmapComponent: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 font-sans p-4 sm:p-8">
+    <div className="min-h-screen bg-background font-sans p-4 sm:p-8">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <header className="mb-8 text-center">
@@ -82,23 +82,23 @@ const RoadmapComponent: React.FC = () => {
                 alt="Fly Wit Us" 
                 className="h-12 w-auto"
               />
-              <h1 className="text-4xl font-extrabold text-gray-900">
+              <h1 className="text-4xl font-extrabold text-card-foreground">
                 Product <span className="text-sky-600">Roadmap</span>
               </h1>
             </div>
-            <p className="text-gray-600">UAS Pre-Flight Checklist System - Future Features</p>
+            <p className="text-muted-foreground">UAS Pre-Flight Checklist System - Future Features</p>
           </Link>
         </header>
 
         {/* Filters */}
-        <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
+        <div className="bg-card text-card-foreground rounded-xl shadow-lg p-6 mb-6">
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1">
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Filter by Priority:</label>
+              <label className="block text-sm font-semibold text-card-foreground mb-2">Filter by Priority:</label>
               <select
                 value={selectedPriority}
                 onChange={(e) => setSelectedPriority(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+                className="w-full px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
               >
                 <option value="all">All Priorities</option>
                 <option value="high">High Priority</option>
@@ -108,11 +108,11 @@ const RoadmapComponent: React.FC = () => {
             </div>
             
             <div className="flex-1">
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Filter by Quarter:</label>
+              <label className="block text-sm font-semibold text-card-foreground mb-2">Filter by Quarter:</label>
               <select
                 value={selectedQuarter}
                 onChange={(e) => setSelectedQuarter(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+                className="w-full px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
               >
                 <option value="all">All Quarters</option>
                 {quarters.map(q => (
@@ -130,24 +130,24 @@ const RoadmapComponent: React.FC = () => {
             if (quarterFeatures.length === 0) return null;
 
             return (
-              <div key={quarter} className="bg-white rounded-2xl shadow-lg p-6 border-t-4 border-sky-500">
-                <h2 className="text-2xl font-bold text-gray-900 mb-4">{quarter}</h2>
+              <div key={quarter} className="bg-card text-card-foreground rounded-2xl shadow-lg p-6 border-t-4 border-sky-500">
+                <h2 className="text-2xl font-bold text-card-foreground mb-4">{quarter}</h2>
                 <div className="space-y-4">
                   {quarterFeatures.map(feature => (
                     <div 
                       key={feature.id} 
-                      className="border-l-4 border-sky-400 pl-4 py-3 bg-gray-50 rounded-r-lg hover:bg-gray-100 transition"
+                      className="border-l-4 border-sky-400 pl-4 py-3 bg-muted rounded-r-lg hover:bg-muted transition"
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
                           <div className="flex items-center gap-3 mb-2">
                             <span className="text-2xl">{getStatusIcon(feature.status)}</span>
-                            <h3 className="text-lg font-bold text-gray-800">{feature.title}</h3>
+                            <h3 className="text-lg font-bold text-card-foreground">{feature.title}</h3>
                             <span className={`px-3 py-1 text-xs font-semibold rounded-full border ${getPriorityColor(feature.priority)}`}>
                               {feature.priority.toUpperCase()}
                             </span>
                           </div>
-                          <p className="text-sm text-gray-600 ml-9">{feature.description}</p>
+                          <p className="text-sm text-muted-foreground ml-9">{feature.description}</p>
                         </div>
                       </div>
                     </div>
@@ -159,20 +159,20 @@ const RoadmapComponent: React.FC = () => {
         </div>
 
         {/* Legend */}
-        <div className="bg-white rounded-xl shadow-lg p-6 mt-6">
-          <h3 className="text-lg font-bold text-gray-900 mb-3">Status Legend</h3>
+        <div className="bg-card text-card-foreground rounded-xl shadow-lg p-6 mt-6">
+          <h3 className="text-lg font-bold text-card-foreground mb-3">Status Legend</h3>
           <div className="flex flex-wrap gap-4">
             <div className="flex items-center gap-2">
               <span className="text-2xl">○</span>
-              <span className="text-sm text-gray-600">Planned</span>
+              <span className="text-sm text-muted-foreground">Planned</span>
             </div>
             <div className="flex items-center gap-2">
               <span className="text-2xl">⟳</span>
-              <span className="text-sm text-gray-600">In Progress</span>
+              <span className="text-sm text-muted-foreground">In Progress</span>
             </div>
             <div className="flex items-center gap-2">
               <span className="text-2xl">✓</span>
-              <span className="text-sm text-gray-600">Completed</span>
+              <span className="text-sm text-muted-foreground">Completed</span>
             </div>
           </div>
         </div>
@@ -198,7 +198,7 @@ const RoadmapComponent: React.FC = () => {
         </div>
 
         {/* Footer */}
-        <footer className="text-center text-sm text-gray-500 py-6 mt-8 border-t">
+        <footer className="text-center text-sm text-muted-foreground py-6 mt-8 border-t">
           <Link
             href={'/'}>
             <div className="flex items-center justify-center gap-3 mb-2">
@@ -210,7 +210,7 @@ const RoadmapComponent: React.FC = () => {
                 className="h-12 w-auto"
               />
               <div className="text-left">
-                <p className="font-bold text-gray-700">FLY WIT US</p>
+                <p className="font-bold text-card-foreground">FLY WIT US</p>
                 <p className="text-xs">fly.witus.online</p>
               </div>
             </div>

@@ -20,25 +20,33 @@ export async function GET(_req: Request, { params }: Ctx) {
   if (userOrRes instanceof NextResponse) return userOrRes;
 
   const { id } = await params;
-  const membership = await getMembership(id, userOrRes.id);
-  if (!membership) {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  try {
+    const membership = await getMembership(id, userOrRes.id);
+    if (!membership) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+
+    const [group] = await db.select().from(groups).where(eq(groups.id, id)).limit(1);
+    if (!group) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+    const [members, sharedMissions] = await Promise.all([
+      listGroupMembers(id),
+      listGroupSharedMissions(id),
+    ]);
+
+    return NextResponse.json({
+      group,
+      membership,
+      members,
+      sharedMissions,
+    });
+  } catch (err) {
+    console.error("[GET /api/groups/[id]]", err);
+    return NextResponse.json(
+      { error: "Failed to load group" },
+      { status: 500 },
+    );
   }
-
-  const [group] = await db.select().from(groups).where(eq(groups.id, id)).limit(1);
-  if (!group) return NextResponse.json({ error: "Not found" }, { status: 404 });
-
-  const [members, sharedMissions] = await Promise.all([
-    listGroupMembers(id),
-    listGroupSharedMissions(id),
-  ]);
-
-  return NextResponse.json({
-    group,
-    membership,
-    members,
-    sharedMissions,
-  });
 }
 
 // PATCH /api/groups/[id] — owner only. Edit name / description / avatar.

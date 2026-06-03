@@ -6,7 +6,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { CHECKLIST_SECTIONS, type ChecklistItem } from '@/lib/checklist-data';
 import { downloadMissionPdf, type Photo } from '@/lib/pdf';
-import { useSession, signOut } from '@/lib/auth-client';
+import { useSession } from '@/lib/auth-client';
 import { fetchWeatherSnapshot, fetchWeatherForZip, reverseLookupZip } from '@/lib/noaa';
 import {
   flushOutbox,
@@ -778,50 +778,25 @@ const UASChecklistApp: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50 font-sans p-4 sm:p-8">
       <div className="max-w-5xl mx-auto">
-        {/* Top bar — sync state (left) + sign-in affordance (right) */}
-        <div className="flex justify-between items-center mb-4 gap-3">
-          <div className="flex-1 min-w-0">
-            {authed && !isOnline && (
+        {/* Sync-status pills. Sign-in / Dashboard / Sign-out moved to the
+            global <AppNav> in the root layout. */}
+        {authed && (!isOnline || pendingSyncCount > 0) && (
+          <div className="mb-4">
+            {!isOnline && (
               <span className="inline-flex items-center gap-2 text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-3 py-1">
                 <span className="w-2 h-2 rounded-full bg-amber-500" aria-hidden />
                 Offline
                 {pendingSyncCount > 0 && ` · ${pendingSyncCount} pending`}
               </span>
             )}
-            {authed && isOnline && pendingSyncCount > 0 && (
+            {isOnline && pendingSyncCount > 0 && (
               <span className="inline-flex items-center gap-2 text-xs font-semibold text-sky-700 bg-sky-50 border border-sky-200 rounded-full px-3 py-1">
                 <span className="w-2 h-2 rounded-full bg-sky-500 animate-pulse" aria-hidden />
                 Syncing {pendingSyncCount}…
               </span>
             )}
           </div>
-          {sessionLoading ? (
-            <div className="h-9 w-24 bg-gray-100 rounded-lg animate-pulse" aria-hidden />
-          ) : session ? (
-            <div className="flex items-center gap-3">
-              <span className="text-sm text-gray-600 hidden sm:inline">{session.user.email}</span>
-              <Link
-                href="/dashboard"
-                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm font-semibold transition"
-              >
-                Dashboard
-              </Link>
-              <button
-                onClick={() => signOut()}
-                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm font-semibold transition"
-              >
-                Sign Out
-              </button>
-            </div>
-          ) : (
-            <Link
-              href="/login"
-              className="px-4 py-2 bg-sky-600 text-white rounded-lg hover:bg-sky-700 text-sm font-semibold transition"
-            >
-              Sign In
-            </Link>
-          )}
-        </div>
+        )}
 
         {(editingMissionId || editLoadError) && (
           <div className="mb-6 p-3 rounded-lg border border-amber-300 bg-amber-50 text-sm">

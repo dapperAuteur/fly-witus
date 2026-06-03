@@ -4,8 +4,9 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useSession } from "@/lib/auth-client";
+import { MeetupsTab } from "./_components/meetups-tab";
 
-type Tab = "missions" | "requests" | "members" | "invite";
+type Tab = "missions" | "requests" | "meetups" | "members" | "invite";
 
 interface GroupRow {
   id: string;
@@ -168,6 +169,9 @@ export default function GroupDashboardPage() {
         <TabButton active={tab === "requests"} onClick={() => setTab("requests")}>
           Flight Requests
         </TabButton>
+        <TabButton active={tab === "meetups"} onClick={() => setTab("meetups")}>
+          Meetups
+        </TabButton>
         <TabButton active={tab === "members"} onClick={() => setTab("members")}>
           Members
         </TabButton>
@@ -180,6 +184,13 @@ export default function GroupDashboardPage() {
         {tab === "missions" && <MissionsTab shares={data.sharedMissions} />}
         {tab === "requests" && (
           <RequestsTab groupId={data.group.id} currentUserId={data.membership.userId} />
+        )}
+        {tab === "meetups" && (
+          <MeetupsTab
+            groupId={data.group.id}
+            currentUserId={data.membership.userId}
+            role={data.membership.role}
+          />
         )}
         {tab === "members" && <MembersTab members={data.members} />}
         {tab === "invite" && (

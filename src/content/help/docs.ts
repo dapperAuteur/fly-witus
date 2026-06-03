@@ -151,6 +151,51 @@ export const HELP_DOCS: HelpDoc[] = [
     ],
   },
   {
+    slug: "group-meetups",
+    title: "Planning group meetups",
+    category: "Groups",
+    summary:
+      "Schedule an in-person flight meetup: propose times, collect everyone's availability, lock in a time, and add it to your calendar.",
+    keywords: [
+      "meetup",
+      "meet up",
+      "schedule",
+      "event",
+      "availability",
+      "calendar",
+      "ics",
+      "reminder",
+      "doodle",
+      "time",
+    ],
+    body: [
+      {
+        kind: "paragraph",
+        text: "In a group, the Meetups tab lets members plan in-person flights together. A group can have as many meetups going at once as you like.",
+      },
+      { kind: "heading", text: "How it works" },
+      {
+        kind: "steps",
+        items: [
+          "Any member taps '+ New meetup', gives it a title and optional location, and proposes one or more candidate times.",
+          "Other members open the meetup and add more candidate times, and mark each time as 'I'm free', 'Maybe', or 'Can't'.",
+          "The meetup's creator (or a group owner/admin) picks the winning time with 'Pick this time'. The meetup is then Confirmed.",
+          "Everyone can tap 'Add to calendar' to download the event (.ics) for Apple/Google/Outlook.",
+        ],
+      },
+      { kind: "heading", text: "Reminders" },
+      {
+        kind: "paragraph",
+        text: "Once a time is confirmed, group members get an email reminder before the meetup. (Push notifications are planned for a later update.)",
+      },
+      { kind: "heading", text: "Managing a meetup" },
+      {
+        kind: "paragraph",
+        text: "The creator and group owners/admins can re-open a confirmed meetup to gather new times, mark it completed, cancel it, or delete it. Groups require a Cloud or Lifetime plan.",
+      },
+    ],
+  },
+  {
     slug: "account-management",
     title: "Managing your account",
     category: "Account",

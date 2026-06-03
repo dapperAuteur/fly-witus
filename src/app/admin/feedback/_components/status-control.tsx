@@ -55,7 +55,7 @@ export function StatusControl({
         value={status}
         disabled={saving}
         onChange={(e) => update(e.target.value as Status)}
-        className={`text-xs font-semibold rounded px-2 py-1 border border-gray-200 ${STATUS_STYLE[status]}`}
+        className={`text-xs font-semibold rounded px-2 py-1 border border-border ${STATUS_STYLE[status]}`}
       >
         {STATUSES.map((s) => (
           <option key={s} value={s}>

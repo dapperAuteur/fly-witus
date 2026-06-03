@@ -21,6 +21,7 @@ const PRIMARY_LINKS: NavLink[] = [
   { href: "/", label: "Checklist" },
   { href: "/dashboard", label: "Dashboard" },
   { href: "/groups", label: "Groups" },
+  { href: "/pricing", label: "Pricing" },
   { href: "/help", label: "Help" },
 ];
 
@@ -34,6 +35,12 @@ export function AppNav() {
   const isAdmin = Boolean(
     (session?.user as { isAdmin?: boolean } | undefined)?.isAdmin,
   );
+
+  // accountTier also rides the session (additionalFields). Free signed-in
+  // users get an explicit "Upgrade" CTA in addition to the Pricing link.
+  const tier =
+    (session?.user as { accountTier?: string } | undefined)?.accountTier ?? "free";
+  const showUpgrade = Boolean(session) && tier === "free";
 
   const isActive = (href: string) =>
     href === "/" ? pathname === "/" : pathname.startsWith(href);
@@ -82,6 +89,14 @@ export function AppNav() {
           <div className="hidden md:flex items-center gap-2 shrink-0">
             {session ? (
               <>
+                {showUpgrade && (
+                  <Link
+                    href="/pricing"
+                    className="px-3 py-2 bg-sky-600 text-white rounded-md text-sm font-semibold hover:bg-sky-700 transition"
+                  >
+                    Upgrade
+                  </Link>
+                )}
                 <span className="text-xs text-muted-foreground max-w-[14rem] truncate hidden lg:inline">
                   {session.user.email}
                 </span>
@@ -137,6 +152,15 @@ export function AppNav() {
               className={`block ${linkClass("/admin")}`}
             >
               Admin
+            </Link>
+          )}
+          {showUpgrade && (
+            <Link
+              href="/pricing"
+              onClick={close}
+              className="block px-3 py-2 bg-sky-600 text-white rounded-md text-sm font-semibold text-center"
+            >
+              Upgrade
             </Link>
           )}
           <div className="pt-2 border-t border-border mt-2">

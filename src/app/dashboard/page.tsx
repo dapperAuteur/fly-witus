@@ -61,17 +61,7 @@ export default function DashboardPage() {
 
   return (
     <main className="max-w-4xl mx-auto p-6 space-y-10">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Dashboard</h1>
-        <div className="flex items-center gap-4">
-          <Link href="/groups" className="text-sm text-sky-700 hover:underline">
-            Groups →
-          </Link>
-          <Link href="/" className="text-sm text-sky-700 hover:underline">
-            ← Back to checklist
-          </Link>
-        </div>
-      </div>
+      <h1 className="text-2xl font-bold">Dashboard</h1>
       <ProfileSection />
       <AircraftSection />
       <MissionsSection />

@@ -57,6 +57,9 @@ export default async function AdminLayout({
             <Link href="/admin/groups" className="hover:text-amber-300">
               Groups
             </Link>
+            <Link href="/admin/feedback" className="hover:text-amber-300">
+              Feedback
+            </Link>
             <Link href="/" className="text-gray-400 hover:text-white">
               ← Site
             </Link>

@@ -43,6 +43,13 @@
       "when": 1778466264245,
       "tag": "0005_conscious_northstar",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1780509286348,
+      "tag": "0006_blue_gunslinger",
+      "breakpoints": true
     }
   ]
 }

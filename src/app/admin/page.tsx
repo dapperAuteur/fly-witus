@@ -76,7 +76,7 @@ export default async function AdminDashboardPage() {
     <div className="space-y-8">
       <header className="flex items-center justify-between flex-wrap gap-3">
         <h1 className="text-2xl font-bold">Admin Dashboard</h1>
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-muted-foreground">
           Live counts. Refresh to update.
         </p>
       </header>
@@ -93,7 +93,7 @@ export default async function AdminDashboardPage() {
       </section>
 
       <section className="grid sm:grid-cols-2 gap-6">
-        <div className="bg-white border border-gray-200 rounded-lg p-4">
+        <div className="bg-card text-card-foreground border border-border rounded-lg p-4">
           <div className="flex items-center justify-between mb-3">
             <h2 className="font-semibold">Recent signups</h2>
             <Link href="/admin/users" className="text-xs text-sky-700 hover:underline">
@@ -102,12 +102,12 @@ export default async function AdminDashboardPage() {
           </div>
           <ul className="space-y-1 text-sm">
             {recentSignups.length === 0 && (
-              <li className="text-gray-500 italic">No signups yet.</li>
+              <li className="text-muted-foreground italic">No signups yet.</li>
             )}
             {recentSignups.map((u) => (
               <li key={u.id} className="flex items-center justify-between">
                 <span className="truncate">{u.email}</span>
-                <span className="text-xs text-gray-500 ml-2 shrink-0">
+                <span className="text-xs text-muted-foreground ml-2 shrink-0">
                   {u.tier} · {new Date(u.createdAt).toLocaleDateString()}
                 </span>
               </li>
@@ -115,21 +115,21 @@ export default async function AdminDashboardPage() {
           </ul>
         </div>
 
-        <div className="bg-white border border-gray-200 rounded-lg p-4">
+        <div className="bg-card text-card-foreground border border-border rounded-lg p-4">
           <h2 className="font-semibold mb-3">Recent missions</h2>
           <ul className="space-y-1 text-sm">
             {recentMissions.length === 0 && (
-              <li className="text-gray-500 italic">No missions yet.</li>
+              <li className="text-muted-foreground italic">No missions yet.</li>
             )}
             {recentMissions.map((m) => (
               <li key={m.id} className="flex items-center justify-between">
                 <span className="truncate">
                   {m.missionNumber}{" "}
-                  <span className="text-gray-500">
+                  <span className="text-muted-foreground">
                     {m.location ? `· ${m.location}` : ""}
                   </span>
                 </span>
-                <span className="text-xs text-gray-500 ml-2 shrink-0">
+                <span className="text-xs text-muted-foreground ml-2 shrink-0">
                   {new Date(m.createdAt).toLocaleDateString()}
                 </span>
               </li>
@@ -152,11 +152,11 @@ function Stat({
 }) {
   const accentCls =
     accent === "amber"
-      ? "bg-amber-50 border-amber-300"
-      : "bg-white border-gray-200";
+      ? "bg-amber-50 dark:bg-amber-950/30 border-amber-300 dark:border-amber-900 text-card-foreground"
+      : "bg-card text-card-foreground border-border";
   return (
     <div className={`border rounded-lg p-4 ${accentCls}`}>
-      <div className="text-xs uppercase tracking-wide text-gray-500">{label}</div>
+      <div className="text-xs uppercase tracking-wide text-muted-foreground">{label}</div>
       <div className="text-2xl font-bold mt-1">{value}</div>
     </div>
   );

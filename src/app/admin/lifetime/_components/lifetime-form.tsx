@@ -42,32 +42,32 @@ export function LifetimeForm({ counter }: { counter: CounterShape }) {
   };
 
   return (
-    <form onSubmit={save} className="bg-white border border-gray-200 rounded-lg p-4 space-y-3">
+    <form onSubmit={save} className="bg-card text-card-foreground border border-border rounded-lg p-4 space-y-3">
       <h2 className="font-semibold">Adjust counter</h2>
-      <p className="text-xs text-gray-500">
+      <p className="text-xs text-muted-foreground">
         Editing here only updates the standard-100 counter. Use this to re-open
         a closed offer (raise total) or correct a drift after a refund.
       </p>
       <div className="grid grid-cols-2 gap-3">
         <label>
-          <span className="block text-xs font-medium text-gray-700 mb-1">Total slots</span>
+          <span className="block text-xs font-medium text-card-foreground mb-1">Total slots</span>
           <input
             type="number"
             min={0}
             max={10000}
             value={total}
             onChange={(e) => setTotal(Number(e.target.value))}
-            className="w-full px-3 py-2 border border-gray-300 rounded"
+            className="w-full px-3 py-2 border border-border rounded"
           />
         </label>
         <label>
-          <span className="block text-xs font-medium text-gray-700 mb-1">Slots used</span>
+          <span className="block text-xs font-medium text-card-foreground mb-1">Slots used</span>
           <input
             type="number"
             min={0}
             value={used}
             onChange={(e) => setUsed(Number(e.target.value))}
-            className="w-full px-3 py-2 border border-gray-300 rounded"
+            className="w-full px-3 py-2 border border-border rounded"
           />
         </label>
       </div>

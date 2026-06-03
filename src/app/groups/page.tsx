@@ -38,7 +38,14 @@ export default function GroupsListPage() {
           return;
         }
       }
-      if (!res.ok) throw new Error(`Failed to load groups (HTTP ${res.status})`);
+      if (!res.ok) {
+        const json = await res.json().catch(() => ({}));
+        throw new Error(
+          json.error
+            ? `${json.error} (HTTP ${res.status})`
+            : `Failed to load groups (HTTP ${res.status})`,
+        );
+      }
       const json = await res.json();
       setGroups(json.groups ?? []);
     } catch (err) {

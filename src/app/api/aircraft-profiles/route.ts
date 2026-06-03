@@ -10,13 +10,24 @@ export async function GET() {
   const userOrRes = await requireUser();
   if (userOrRes instanceof NextResponse) return userOrRes;
 
-  const profiles = await db
-    .select()
-    .from(aircraftProfiles)
-    .where(eq(aircraftProfiles.userId, userOrRes.id))
-    .orderBy(desc(aircraftProfiles.createdAt));
+  try {
+    const profiles = await db
+      .select()
+      .from(aircraftProfiles)
+      .where(eq(aircraftProfiles.userId, userOrRes.id))
+      .orderBy(desc(aircraftProfiles.createdAt));
 
-  return NextResponse.json({ profiles });
+    return NextResponse.json({ profiles });
+  } catch (err) {
+    // Most likely cause in prod: the aircraft_profiles table is missing
+    // because migration 0003 was never applied. Log it so the real
+    // Postgres error is visible instead of an opaque 500.
+    console.error("[GET /api/aircraft-profiles]", err);
+    return NextResponse.json(
+      { error: "Failed to load aircraft profiles" },
+      { status: 500 },
+    );
+  }
 }
 
 export async function POST(req: Request) {

@@ -57,7 +57,7 @@ export default async function AdminCashAppPage(props: {
     <div className="space-y-6">
       <header className="flex items-start justify-between gap-3 flex-wrap">
         <div>
-          <h1 className="text-2xl font-extrabold text-gray-900">
+          <h1 className="text-2xl font-extrabold text-card-foreground">
             CashApp Activation Queue
           </h1>
           {pendingCount > 0 && (
@@ -81,7 +81,7 @@ export default async function AdminCashAppPage(props: {
               className={`px-3 py-1.5 rounded-full text-sm font-semibold transition ${
                 active
                   ? "bg-gray-900 text-white"
-                  : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
+                  : "bg-card text-card-foreground border border-border text-card-foreground hover:bg-muted"
               }`}
             >
               {f.label}
@@ -91,7 +91,7 @@ export default async function AdminCashAppPage(props: {
       </nav>
 
       {rows.length === 0 ? (
-        <div className="bg-white rounded-2xl shadow p-8 text-center text-gray-500">
+        <div className="bg-card text-card-foreground rounded-2xl shadow p-8 text-center text-muted-foreground">
           {filter === "pending"
             ? "No pending CashApp requests. Inbox zero."
             : `No ${filter} CashApp requests.`}

@@ -32,7 +32,7 @@ export default async function AdminLayout({
   if (!me?.isAdmin) notFound();
 
   return (
-    <div className="min-h-screen bg-gray-50 font-sans">
+    <div className="min-h-screen bg-background font-sans">
       <nav className="bg-gray-900 text-white px-4 sm:px-8 py-3 sticky top-0 z-10">
         <div className="max-w-6xl mx-auto flex items-center justify-between gap-4 flex-wrap">
           <Link href="/admin" className="font-extrabold text-lg">

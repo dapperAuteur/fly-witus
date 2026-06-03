@@ -50,7 +50,7 @@ export default function JoinByInvitePage() {
   if (isPending) {
     return (
       <main className="max-w-md mx-auto p-6">
-        <div className="h-8 w-48 bg-gray-100 rounded animate-pulse" />
+        <div className="h-8 w-48 bg-muted rounded animate-pulse" />
       </main>
     );
   }
@@ -60,7 +60,7 @@ export default function JoinByInvitePage() {
     return (
       <main className="max-w-md mx-auto p-6">
         <h1 className="text-2xl font-bold mb-3">Join group</h1>
-        <p className="text-gray-600 mb-4">
+        <p className="text-muted-foreground mb-4">
           You&apos;ve been invited with code{" "}
           <span className="font-mono font-semibold">{params.inviteCode}</span>. Sign in
           to accept.
@@ -79,7 +79,7 @@ export default function JoinByInvitePage() {
     return (
       <main className="max-w-md mx-auto p-6">
         <h1 className="text-2xl font-bold mb-3">Paid plan required</h1>
-        <p className="text-gray-700 mb-4">
+        <p className="text-muted-foreground mb-4">
           Joining groups requires Cloud or Lifetime. Your invite code is saved — once you
           upgrade, paste it back at /groups.
         </p>
@@ -107,7 +107,7 @@ export default function JoinByInvitePage() {
 
   return (
     <main className="max-w-md mx-auto p-6">
-      <p className="text-gray-600">Joining group…</p>
+      <p className="text-muted-foreground">Joining group…</p>
     </main>
   );
 }

@@ -173,47 +173,47 @@ const ChecklistItemComponent: React.FC<{
   
   if (item.type === 'weather') {
     return (
-      <div className="border-l-4 border-sky-400 pl-4 py-3 bg-sky-50 rounded-r-lg">
-        <label className="flex items-start font-medium text-gray-800 mb-3">
+      <div className="border-l-4 border-sky-400 pl-4 py-3 bg-sky-50 dark:bg-sky-950/30 rounded-r-lg">
+        <label className="flex items-start font-medium text-card-foreground mb-3">
           <input
             type="checkbox"
             checked={checked}
             onChange={onToggle}
             className="mt-1 mr-3 w-5 h-5 accent-sky-600"
           />
-          <span className={checked ? 'line-through text-gray-500' : ''}>
+          <span className={checked ? 'line-through text-muted-foreground' : ''}>
             {item.label} {item.required && <span className="text-red-500">*</span>}
           </span>
         </label>
         <div className="grid grid-cols-3 gap-3 ml-8">
           <div>
-            <label className="text-xs font-semibold text-gray-600 block mb-1">Temperature:</label>
+            <label className="text-xs font-semibold text-muted-foreground block mb-1">Temperature:</label>
             <input
               type="text"
               value={weatherData?.temperature || ''}
               onChange={(e) => onWeatherChange('temperature', e.target.value)}
               placeholder="e.g., 72°F"
-              className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+              className="w-full px-2 py-1 text-sm border border-border rounded focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
             />
           </div>
           <div>
-            <label className="text-xs font-semibold text-gray-600 block mb-1">Wind:</label>
+            <label className="text-xs font-semibold text-muted-foreground block mb-1">Wind:</label>
             <input
               type="text"
               value={weatherData?.wind || ''}
               onChange={(e) => onWeatherChange('wind', e.target.value)}
               placeholder="e.g., 5 mph NW"
-              className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+              className="w-full px-2 py-1 text-sm border border-border rounded focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
             />
           </div>
           <div>
-            <label className="text-xs font-semibold text-gray-600 block mb-1">Precipitation:</label>
+            <label className="text-xs font-semibold text-muted-foreground block mb-1">Precipitation:</label>
             <input
               type="text"
               value={weatherData?.precipitation || ''}
               onChange={(e) => onWeatherChange('precipitation', e.target.value)}
               placeholder="None"
-              className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+              className="w-full px-2 py-1 text-sm border border-border rounded focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
             />
           </div>
         </div>
@@ -224,14 +224,14 @@ const ChecklistItemComponent: React.FC<{
   if (item.type === 'text') {
     return (
       <div className="flex items-center py-2">
-        <label className="flex-grow font-medium text-gray-800">
+        <label className="flex-grow font-medium text-card-foreground">
           {item.label} {item.required && <span className="text-red-500">*</span>}
         </label>
         <input
           type="text"
           value={value || ''}
           onChange={(e) => onValueChange(e.target.value)}
-          className="ml-4 px-3 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+          className="ml-4 px-3 py-1 border border-border rounded focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
         />
       </div>
     );
@@ -246,7 +246,7 @@ const ChecklistItemComponent: React.FC<{
           onChange={onToggle}
           className="mt-1 mr-3 w-5 h-5 accent-lime-600 cursor-pointer"
         />
-        <span className={`font-medium transition-all ${checked ? 'line-through text-gray-500' : 'text-gray-800 group-hover:text-lime-600'}`}>
+        <span className={`font-medium transition-all ${checked ? 'line-through text-muted-foreground' : 'text-card-foreground group-hover:text-lime-600'}`}>
           {item.label} {item.required && <span className="text-red-500">*</span>}
         </span>
       </label>
@@ -255,13 +255,13 @@ const ChecklistItemComponent: React.FC<{
         <div className="ml-8 mt-2 space-y-2">
           {item.subfields.map(subfield => (
             <div key={subfield.id} className="flex items-center">
-              <label className="text-sm text-gray-700 w-32">{subfield.label}:</label>
+              <label className="text-sm text-card-foreground w-32">{subfield.label}:</label>
               <input
                 type={subfield.type}
                 value={subValues?.[subfield.id] || ''}
                 onChange={(e) => onSubValueChange(subfield.id, e.target.value)}
                 placeholder={subfield.type === 'number' ? '0.0' : ''}
-                className="ml-2 px-2 py-1 w-24 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-lime-500 focus:border-lime-500"
+                className="ml-2 px-2 py-1 w-24 text-sm border border-border rounded focus:ring-2 focus:ring-lime-500 focus:border-lime-500"
               />
             </div>
           ))}
@@ -277,9 +277,9 @@ const FlightLogSection: React.FC<{
   onUpdateFlight: (index: number, field: keyof FlightRecord, value: string) => void;
 }> = ({ flightRecords, onAddFlight, onUpdateFlight }) => {
   return (
-    <div className="bg-white rounded-2xl shadow-lg p-6 border-t-4 border-fuchsia-500 mt-6">
+    <div className="bg-card text-card-foreground rounded-2xl shadow-lg p-6 border-t-4 border-fuchsia-500 mt-6">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-2xl font-bold text-gray-900">Flight Log</h2>
+        <h2 className="text-2xl font-bold text-card-foreground">Flight Log</h2>
         <button
           onClick={onAddFlight}
           className="px-4 py-2 bg-fuchsia-600 text-white rounded-lg hover:bg-fuchsia-700 font-semibold transition"
@@ -289,85 +289,85 @@ const FlightLogSection: React.FC<{
       </div>
       
       {flightRecords.length === 0 && (
-        <p className="text-gray-500 text-center py-4">No flights recorded yet.</p>
+        <p className="text-muted-foreground text-center py-4">No flights recorded yet.</p>
       )}
       
       {flightRecords.map((flight, idx) => (
-        <div key={idx} className="mb-6 p-4 border border-gray-200 rounded-lg bg-gray-50">
-          <h3 className="text-lg font-bold text-gray-800 mb-3">Flight {flight.flightNumber}</h3>
+        <div key={idx} className="mb-6 p-4 border border-border rounded-lg bg-muted">
+          <h3 className="text-lg font-bold text-card-foreground mb-3">Flight {flight.flightNumber}</h3>
           
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="text-sm font-semibold text-gray-600 block mb-1">Takeoff Location:</label>
+              <label className="text-sm font-semibold text-muted-foreground block mb-1">Takeoff Location:</label>
               <input
                 type="text"
                 value={flight.takeoffLoc}
                 onChange={(e) => onUpdateFlight(idx, 'takeoffLoc', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-fuchsia-500 focus:border-fuchsia-500"
+                className="w-full px-3 py-2 border border-border rounded focus:ring-2 focus:ring-fuchsia-500 focus:border-fuchsia-500"
               />
             </div>
             
             <div>
-              <label className="text-sm font-semibold text-gray-600 block mb-1">Landing Location:</label>
+              <label className="text-sm font-semibold text-muted-foreground block mb-1">Landing Location:</label>
               <input
                 type="text"
                 value={flight.landingLoc}
                 onChange={(e) => onUpdateFlight(idx, 'landingLoc', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-fuchsia-500 focus:border-fuchsia-500"
+                className="w-full px-3 py-2 border border-border rounded focus:ring-2 focus:ring-fuchsia-500 focus:border-fuchsia-500"
               />
             </div>
             
             <div>
-              <label className="text-sm font-semibold text-gray-600 block mb-1">Launch Time:</label>
+              <label className="text-sm font-semibold text-muted-foreground block mb-1">Launch Time:</label>
               <input
                 type="time"
                 value={flight.launchTime}
                 onChange={(e) => onUpdateFlight(idx, 'launchTime', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-fuchsia-500 focus:border-fuchsia-500"
+                className="w-full px-3 py-2 border border-border rounded focus:ring-2 focus:ring-fuchsia-500 focus:border-fuchsia-500"
               />
             </div>
             
             <div>
-              <label className="text-sm font-semibold text-gray-600 block mb-1">Landing Time:</label>
+              <label className="text-sm font-semibold text-muted-foreground block mb-1">Landing Time:</label>
               <input
                 type="time"
                 value={flight.landingTime}
                 onChange={(e) => onUpdateFlight(idx, 'landingTime', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-fuchsia-500 focus:border-fuchsia-500"
+                className="w-full px-3 py-2 border border-border rounded focus:ring-2 focus:ring-fuchsia-500 focus:border-fuchsia-500"
               />
             </div>
             
             <div>
-              <label className="text-sm font-semibold text-gray-600 block mb-1">Elapsed Time:</label>
+              <label className="text-sm font-semibold text-muted-foreground block mb-1">Elapsed Time:</label>
               <input
                 type="text"
                 value={flight.elapsedTime}
                 onChange={(e) => onUpdateFlight(idx, 'elapsedTime', e.target.value)}
                 placeholder="e.g., 00:23:45"
-                className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-fuchsia-500 focus:border-fuchsia-500"
+                className="w-full px-3 py-2 border border-border rounded focus:ring-2 focus:ring-fuchsia-500 focus:border-fuchsia-500"
               />
             </div>
             
             <div>
-              <label className="text-sm font-semibold text-gray-600 block mb-1">Battery Voltage:</label>
+              <label className="text-sm font-semibold text-muted-foreground block mb-1">Battery Voltage:</label>
               <input
                 type="text"
                 value={flight.batteryVoltage}
                 onChange={(e) => onUpdateFlight(idx, 'batteryVoltage', e.target.value)}
                 placeholder="e.g., 15.2V"
-                className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-fuchsia-500 focus:border-fuchsia-500"
+                className="w-full px-3 py-2 border border-border rounded focus:ring-2 focus:ring-fuchsia-500 focus:border-fuchsia-500"
               />
             </div>
           </div>
           
           <div className="mt-4">
-            <label className="text-sm font-semibold text-gray-600 block mb-1">Flight Notes:</label>
+            <label className="text-sm font-semibold text-muted-foreground block mb-1">Flight Notes:</label>
             <textarea
               value={flight.notes}
               onChange={(e) => onUpdateFlight(idx, 'notes', e.target.value)}
               rows={2}
               placeholder="Observations, issues, or notable events..."
-              className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-fuchsia-500 focus:border-fuchsia-500"
+              className="w-full px-3 py-2 border border-border rounded focus:ring-2 focus:ring-fuchsia-500 focus:border-fuchsia-500"
             />
           </div>
         </div>
@@ -776,7 +776,7 @@ const UASChecklistApp: React.FC = () => {
   }, [completedRequired, requiredItems.length]);
 
   return (
-    <div className="min-h-screen bg-gray-50 font-sans p-4 sm:p-8">
+    <div className="min-h-screen bg-background font-sans p-4 sm:p-8">
       <div className="max-w-5xl mx-auto">
         {/* Top bar — sync state (left) + sign-in affordance (right) */}
         <div className="flex justify-between items-center mb-4 gap-3">
@@ -796,19 +796,19 @@ const UASChecklistApp: React.FC = () => {
             )}
           </div>
           {sessionLoading ? (
-            <div className="h-9 w-24 bg-gray-100 rounded-lg animate-pulse" aria-hidden />
+            <div className="h-9 w-24 bg-muted rounded-lg animate-pulse" aria-hidden />
           ) : session ? (
             <div className="flex items-center gap-3">
-              <span className="text-sm text-gray-600 hidden sm:inline">{session.user.email}</span>
+              <span className="text-sm text-muted-foreground hidden sm:inline">{session.user.email}</span>
               <Link
                 href="/dashboard"
-                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm font-semibold transition"
+                className="px-4 py-2 border border-border text-card-foreground rounded-lg hover:bg-muted text-sm font-semibold transition"
               >
                 Dashboard
               </Link>
               <button
                 onClick={() => signOut()}
-                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm font-semibold transition"
+                className="px-4 py-2 border border-border text-card-foreground rounded-lg hover:bg-muted text-sm font-semibold transition"
               >
                 Sign Out
               </button>
@@ -857,12 +857,12 @@ const UASChecklistApp: React.FC = () => {
               alt="Fly Wit Us" 
               className="h-16 w-auto"
             />
-            <h1 className="text-4xl font-extrabold text-gray-900">
+            <h1 className="text-4xl font-extrabold text-card-foreground">
               UAS <span className="text-sky-600">Pre-Flight Checklist</span>
             </h1>
           </div>
-          <p className="mt-2 text-gray-600">Mission: {missionNumber}</p>
-          <p className="text-sm text-gray-500">{new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+          <p className="mt-2 text-muted-foreground">Mission: {missionNumber}</p>
+          <p className="text-sm text-muted-foreground">{new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
           <div className="mt-3 flex justify-center gap-2">
             <span className="px-3 py-1 bg-lime-100 text-lime-700 text-xs font-semibold rounded-full">
               Auto-Save: ON
@@ -871,24 +871,24 @@ const UASChecklistApp: React.FC = () => {
         </header>
 
         {/* Progress Bar */}
-        <div className="bg-white rounded-xl shadow-lg p-6 mb-6 border-t-4 border-lime-500">
+        <div className="bg-card text-card-foreground rounded-xl shadow-lg p-6 mb-6 border-t-4 border-lime-500">
           <div className="flex justify-between items-center mb-2">
-            <h2 className="text-lg font-bold text-gray-800">Required Items Progress</h2>
-            <span className="text-2xl font-extrabold text-gray-900">{progressPercentage}%</span>
+            <h2 className="text-lg font-bold text-card-foreground">Required Items Progress</h2>
+            <span className="text-2xl font-extrabold text-card-foreground">{progressPercentage}%</span>
           </div>
-          <div className="h-4 bg-gray-200 rounded-full overflow-hidden">
+          <div className="h-4 bg-muted rounded-full overflow-hidden">
             <div 
               className="h-full bg-lime-500 transition-all duration-700 ease-out" 
               style={{ width: `${progressPercentage}%` }}
             ></div>
           </div>
-          <p className="text-sm text-gray-600 mt-2">{completedRequired} of {requiredItems.length} required items completed</p>
+          <p className="text-sm text-muted-foreground mt-2">{completedRequired} of {requiredItems.length} required items completed</p>
         </div>
 
         {/* Mission Info */}
-        <div className="bg-white rounded-2xl shadow-lg p-6 mb-6 border-t-4 border-sky-500">
+        <div className="bg-card text-card-foreground rounded-2xl shadow-lg p-6 mb-6 border-t-4 border-sky-500">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-2xl font-bold text-gray-900">Mission Information</h2>
+            <h2 className="text-2xl font-bold text-card-foreground">Mission Information</h2>
             <button
               onClick={() => setShowProfiles(!showProfiles)}
               className="px-3 py-1 bg-sky-600 text-white rounded hover:bg-sky-700 text-sm font-semibold transition"
@@ -898,9 +898,9 @@ const UASChecklistApp: React.FC = () => {
           </div>
           
           {showProfiles && (
-            <div className="mb-4 p-4 bg-sky-50 rounded-lg border border-sky-200">
+            <div className="mb-4 p-4 bg-sky-50 dark:bg-sky-950/30 rounded-lg border border-sky-200 dark:border-sky-900">
               <div className="flex justify-between items-center mb-3">
-                <h3 className="font-bold text-gray-800">Saved Aircraft</h3>
+                <h3 className="font-bold text-card-foreground">Saved Aircraft</h3>
                 <button
                   onClick={handleAddProfile}
                   className="px-3 py-1 bg-lime-600 text-white rounded hover:bg-lime-700 text-sm font-semibold transition"
@@ -909,14 +909,14 @@ const UASChecklistApp: React.FC = () => {
                 </button>
               </div>
               {aircraftProfiles.length === 0 ? (
-                <p className="text-gray-500 text-sm">No profiles saved yet.</p>
+                <p className="text-muted-foreground text-sm">No profiles saved yet.</p>
               ) : (
                 <div className="space-y-2">
                   {aircraftProfiles.map(profile => (
-                    <div key={profile.id} className="flex justify-between items-center bg-white p-3 rounded border border-gray-200">
+                    <div key={profile.id} className="flex justify-between items-center bg-card text-card-foreground p-3 rounded border border-border">
                       <div>
-                        <p className="font-semibold text-gray-800">{profile.name}</p>
-                        <p className="text-sm text-gray-600">{profile.type}</p>
+                        <p className="font-semibold text-card-foreground">{profile.name}</p>
+                        <p className="text-sm text-muted-foreground">{profile.type}</p>
                       </div>
                       <div className="flex gap-2">
                         <button
@@ -941,7 +941,7 @@ const UASChecklistApp: React.FC = () => {
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1">
+              <label className="block text-sm font-semibold text-card-foreground mb-1">
                 Pilot Name: <span className="text-red-500">*</span>
               </label>
               <input
@@ -949,21 +949,21 @@ const UASChecklistApp: React.FC = () => {
                 value={pilotName}
                 onChange={(e) => setPilotName(e.target.value)}
                 placeholder="Enter pilot name"
-                className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+                className="w-full px-3 py-2 border border-border rounded focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
               />
             </div>
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1">RP Cert:</label>
+              <label className="block text-sm font-semibold text-card-foreground mb-1">RP Cert:</label>
               <input
                 type="text"
                 value={rpCert}
                 onChange={(e) => setRpCert(e.target.value)}
                 placeholder="Remote Pilot Certificate #"
-                className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+                className="w-full px-3 py-2 border border-border rounded focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
               />
             </div>
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1">
+              <label className="block text-sm font-semibold text-card-foreground mb-1">
                 Location: <span className="text-red-500">*</span>
               </label>
               <input
@@ -971,11 +971,11 @@ const UASChecklistApp: React.FC = () => {
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
                 placeholder="Flight location"
-                className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+                className="w-full px-3 py-2 border border-border rounded focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
               />
             </div>
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1">
+              <label className="block text-sm font-semibold text-card-foreground mb-1">
                 Aircraft Type/Name: <span className="text-red-500">*</span>
               </label>
               <input
@@ -983,7 +983,7 @@ const UASChecklistApp: React.FC = () => {
                 value={aircraftType}
                 onChange={(e) => setAircraftType(e.target.value)}
                 placeholder="e.g., DJI Mavic 3"
-                className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+                className="w-full px-3 py-2 border border-border rounded focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
               />
             </div>
           </div>
@@ -1005,7 +1005,7 @@ const UASChecklistApp: React.FC = () => {
                 value={zipCode}
                 onChange={(e) => setZipCode(e.target.value.replace(/\D/g, ''))}
                 placeholder="ZIP (e.g. 90210)"
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+                className="flex-1 px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
                 disabled={loadingWeather}
               />
               <button
@@ -1026,8 +1026,8 @@ const UASChecklistApp: React.FC = () => {
 
         {/* Checklist Sections */}
         {CHECKLIST_SECTIONS.map((section, idx) => (
-          <div key={idx} className="bg-white rounded-2xl shadow-lg p-6 mb-6 border-t-4 border-gray-400">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">{section.title}</h2>
+          <div key={idx} className="bg-card text-card-foreground rounded-2xl shadow-lg p-6 mb-6 border-t-4 border-gray-400">
+            <h2 className="text-2xl font-bold text-card-foreground mb-4">{section.title}</h2>
             <div className="space-y-1">
               {section.items.map(item => (
                 <ChecklistItemComponent
@@ -1048,15 +1048,15 @@ const UASChecklistApp: React.FC = () => {
         ))}
 
         {/* Photos */}
-        <div className="bg-white rounded-2xl shadow-lg p-6 mt-6 border-t-4 border-fuchsia-500">
+        <div className="bg-card text-card-foreground rounded-2xl shadow-lg p-6 mt-6 border-t-4 border-fuchsia-500">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-2xl font-bold text-gray-900">Photos</h2>
+            <h2 className="text-2xl font-bold text-card-foreground">Photos</h2>
             <PhotoUploadButton
               onAdd={(photo) => setPhotos((prev) => [...prev, photo])}
             />
           </div>
           {photos.length === 0 ? (
-            <p className="text-gray-500 text-center py-4">
+            <p className="text-muted-foreground text-center py-4">
               No photos attached yet. Photos appear in the exported PDF.
             </p>
           ) : (
@@ -1067,7 +1067,7 @@ const UASChecklistApp: React.FC = () => {
                   <img
                     src={p.url}
                     alt={p.caption ?? `Mission photo ${idx + 1}`}
-                    className="w-full aspect-square object-cover rounded-lg border border-gray-200"
+                    className="w-full aspect-square object-cover rounded-lg border border-border"
                   />
                   <button
                     type="button"
@@ -1116,18 +1116,18 @@ const UASChecklistApp: React.FC = () => {
 
         {/* Mission History */}
         {showHistory && (
-          <div className="bg-white rounded-2xl shadow-lg p-6 mb-6 border-t-4 border-fuchsia-500">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Mission History</h2>
+          <div className="bg-card text-card-foreground rounded-2xl shadow-lg p-6 mb-6 border-t-4 border-fuchsia-500">
+            <h2 className="text-2xl font-bold text-card-foreground mb-4">Mission History</h2>
             {recentMissions.length === 0 ? (
-              <p className="text-gray-500 text-center py-4">No missions saved yet.</p>
+              <p className="text-muted-foreground text-center py-4">No missions saved yet.</p>
             ) : (
               <div className="space-y-4">
                 {recentMissions.map((mission, idx) => (
-                  <div key={idx} className="border border-gray-200 rounded-lg p-4 bg-gray-50 hover:bg-gray-100 transition">
+                  <div key={idx} className="border border-border rounded-lg p-4 bg-muted hover:bg-muted transition">
                     <div className="flex justify-between items-start">
                       <div>
-                        <h3 className="text-lg font-bold text-gray-800">Mission {mission.missionNumber}</h3>
-                        <p className="text-sm text-gray-600">
+                        <h3 className="text-lg font-bold text-card-foreground">Mission {mission.missionNumber}</h3>
+                        <p className="text-sm text-muted-foreground">
                           {new Date(mission.timestamp).toLocaleDateString('en-US', { 
                             weekday: 'short', 
                             year: 'numeric', 
@@ -1137,13 +1137,13 @@ const UASChecklistApp: React.FC = () => {
                             minute: '2-digit'
                           })}
                         </p>
-                        <p className="text-sm text-gray-700 mt-1">
+                        <p className="text-sm text-card-foreground mt-1">
                           <strong>Pilot:</strong> {mission.pilotName} | <strong>Location:</strong> {mission.location}
                         </p>
-                        <p className="text-sm text-gray-700">
+                        <p className="text-sm text-card-foreground">
                           <strong>Aircraft:</strong> {mission.aircraftType}
                         </p>
-                        <p className="text-sm text-gray-600 mt-1">
+                        <p className="text-sm text-muted-foreground mt-1">
                           {mission.flightRecords.length} flight(s) recorded
                         </p>
                       </div>
@@ -1171,7 +1171,7 @@ const UASChecklistApp: React.FC = () => {
         )}
 
         {/* Footer */}
-        <footer className="text-center text-sm text-gray-500 py-6 border-t">
+        <footer className="text-center text-sm text-muted-foreground py-6 border-t">
           <div className="flex items-center justify-center gap-3 mb-2">
           <Link 
             href="/roadmap" 
@@ -1187,7 +1187,7 @@ const UASChecklistApp: React.FC = () => {
               className="h-12 w-auto"
             />
             <div className="text-left">
-              <p className="font-bold text-gray-700">FLY WIT US</p>
+              <p className="font-bold text-card-foreground">FLY WIT US</p>
               <p className="text-xs">fly.witus.online</p>
             </div>
           </div>

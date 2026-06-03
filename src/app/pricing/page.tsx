@@ -106,7 +106,7 @@ export default async function PricingPage() {
     : PRICE_LABELS.lifetimeCashApp;
 
   return (
-    <main className="min-h-screen bg-gray-50 font-sans p-4 sm:p-8">
+    <main className="min-h-screen bg-background font-sans p-4 sm:p-8">
       <div className="max-w-5xl mx-auto">
         {/* Top header — link back home + pricing title */}
         <header className="mb-8 text-center">
@@ -119,10 +119,10 @@ export default async function PricingPage() {
               className="h-12 w-auto"
               priority
             />
-            <span className="text-2xl font-extrabold text-gray-900">FLY WIT US</span>
+            <span className="text-2xl font-extrabold text-card-foreground">FLY WIT US</span>
           </Link>
-          <h1 className="text-4xl font-extrabold text-gray-900">Pricing</h1>
-          <p className="mt-2 text-gray-600">
+          <h1 className="text-4xl font-extrabold text-card-foreground">Pricing</h1>
+          <p className="mt-2 text-muted-foreground">
             Built by a Part 107 pilot for Part 107 pilots.
           </p>
         </header>
@@ -171,7 +171,7 @@ export default async function PricingPage() {
           annualSavings={PRICE_LABELS.annualSavings}
         />
 
-        <footer className="text-center text-sm text-gray-500 py-8 mt-8 border-t">
+        <footer className="text-center text-sm text-muted-foreground py-8 mt-8 border-t border-border">
           <p>
             Questions? Email{" "}
             <a href="mailto:bam@awews.com" className="text-sky-600 hover:underline">

@@ -1,3 +1,9 @@
+## ⚠️ Ecosystem repo identity (don't confuse these)
+
+This repo — **fly-witus** — is **Fly.WitUS** (https://fly.witus.online): pre-flight documentation, weather briefings, and compliant flight logs for recreational and commercial UAS operators. Full ecosystem identity + product index: `gemini/witus/CLAUDE.md` and `gemini/witus/lib/products.ts`.
+
+---
+
 <!-- BEGIN:witus-shared-rules v1 -->
 <!-- MANAGED BLOCK — do not edit by hand. Source: gemini/witus/docs/shared-rules.md.
      Update the source, then run `node scripts/sync-claude-rules.mjs` in the witus repo. -->

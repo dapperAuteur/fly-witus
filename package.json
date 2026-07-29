@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
+    "check:scrub": "tsx scripts/check-sentry-scrub.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx --env-file=.env.local scripts/migrate.ts",
     "db:migrate:prod": "tsx scripts/migrate.ts",
@@ -16,6 +17,7 @@
     "noaa:sweep": "tsx scripts/noaa-sweep.ts"
   },
   "dependencies": {
+    "@sentry/nextjs": "^10.69.0",
     "@vercel/analytics": "^1.5.0",
     "better-auth": "^1.6.9",
     "drizzle-orm": "^0.45.2",

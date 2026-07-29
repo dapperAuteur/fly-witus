@@ -60,6 +60,7 @@ Reference (endpoints + data-deletion semantics): [docs/account-management.md](do
 - **PDF**: jsPDF
 - **PWA**: Serwist + IndexedDB outbox
 - **Cron**: Vercel Cron (daily CashApp SLA reminder + meetup reminders)
+- **Error monitoring**: Better Stack via `@sentry/nextjs` (Better Stack ingests the Sentry protocol); off until a DSN is set
 - **Theme**: OS-driven light/dark via semantic CSS tokens (Tailwind v4)
 
 ## Local development
@@ -75,6 +76,18 @@ npm run dev                        # http://localhost:3000
 ```
 
 Required env: `DATABASE_URL`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `ADMIN_EMAIL`. Stripe / Mailgun / Cloudinary / CashApp env are optional for local dev — features they back surface a friendly fallback when their env is absent.
+
+### Error monitoring (Better Stack)
+
+Crash reporting runs through `@sentry/nextjs`, pointed at a **Better Stack** source (Better Stack ingests the Sentry protocol, so the SDK and the "DSN" are Sentry's; the destination is not). It is **completely inert until a DSN is set**: `sentry.server.config.ts`, `sentry.edge.config.ts`, and `src/instrumentation-client.ts` each skip `Sentry.init()` when their DSN env var is empty, so no init, no network calls, and no behaviour change in local dev or on a deploy without the vars.
+
+Every event passes through `src/lib/sentry-scrub.ts` before it leaves the process. That pass strips the pilot's email, IP, and username; drops request cookies, bodies, and the `Cookie` / `Authorization` headers; and redacts magic-link tokens, `/join/<inviteCode>` codes, signed email-change tokens, JWTs, Stripe keys, connection strings, and env-var-shaped secrets out of free text. It deliberately **keeps** 21-char `nanoid()` resource ids and route paths, because a report with those stripped is not worth having.
+
+```bash
+npm run check:scrub    # asserts a worst-case event serializes with no secret in it
+```
+
+Tracing and session replay are set to a 0 sample rate (errors only). Env vars live in `.env.example`; provisioning the DSN is `plans/user-tasks/24-bam-betterstack-sentry-dsn.md`.
 
 ## API surface (signed-in users)
 
@@ -126,7 +139,11 @@ Non-admins see 404 on `/admin/*` (no existence leak).
 ## Project structure
 
 ```
+sentry.server.config.ts           # Sentry/Better Stack init, Node runtime (inert without a DSN)
+sentry.edge.config.ts             # Sentry/Better Stack init, edge runtime
 src/
+├── instrumentation.ts            # Next register() per runtime + onRequestError
+├── instrumentation-client.ts     # browser-runtime init + router-transition hook
 ├── app/
 │   ├── (auth)/login/             # magic-link sign-in
 │   ├── admin/                    # gated admin panel
@@ -181,6 +198,7 @@ src/
     ├── outbox-trigger.ts         # WitUS Outbox social-draft fan-out
     ├── outbox-mission-caption.ts
     ├── inbox.ts                  # WitUS Inbox push
+    ├── sentry-scrub.ts           # beforeSend PII/credential scrubber
     └── admin-notify.ts
 ```
 

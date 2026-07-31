@@ -122,6 +122,8 @@ Tracing and session replay are set to a 0 sample rate (errors only). Env vars li
 | POST | `/api/stripe/webhook` | Stripe event handler |
 | GET | `/api/weather` | NOAA forecast for ZIP/lat-lon |
 
+Public and unauthenticated: `GET`/`HEAD` `/api/health` — see [Uptime monitoring](#uptime-monitoring--apihealth).
+
 ## Admin (gated by `users.isAdmin`)
 
 | Path | Purpose |
@@ -156,6 +158,7 @@ src/
 │   │   ├── account/              # email change / export / sessions / delete
 │   │   ├── feedback/             # help-bubble submissions
 │   │   ├── cashapp/request/      # CashApp manual activation
+│   │   ├── health/               # public uptime check (real DB probe, never cached)
 │   │   └── cron/                 # cashapp-reminder + meetup-reminders
 │   ├── dashboard/                # user dashboard (incl. Account section)
 │   ├── groups/                   # group list/create/dashboard (+ meetups tab)
@@ -201,6 +204,27 @@ src/
     ├── sentry-scrub.ts           # beforeSend PII/credential scrubber
     └── admin-notify.ts
 ```
+
+## Uptime monitoring — `/api/health`
+
+Public, unauthenticated, and never cached. Point Better Stack (or any uptime monitor) at
+`https://fly.witus.online/api/health`, **not** at `/`. The homepage can be served from the CDN cache
+and answer 200 while Postgres is unreachable, so a green check on `/` proves only that the edge had
+bytes. `/api/health` runs a real `select 1` against the database on every request.
+
+| Condition | Status | Body |
+|---|---|---|
+| Database answered | `200` | `{"ok":true,"checks":{"db":"ok"}}` |
+| Database unreachable, or the probe took longer than 4s | `503` | `{"ok":false,"error":"database_unreachable"}` |
+
+- `GET` and `HEAD` both run the same real check, so a HEAD-only monitor gets the same meaning.
+- The failure body is a fixed literal and the failure log is a fixed string. The underlying error is
+  never echoed and never logged: a pg connection error carries the connection string, password
+  included.
+- Uncached at every layer — `force-dynamic`, `revalidate = 0`, `Cache-Control: no-store`, and a
+  `NetworkOnly` rule in the service worker (`src/app/sw.ts`) so the PWA cannot serve a stale 200.
+- Monitor config: alert on any non-200, keep the check interval at or above 30s (each hit opens a
+  database round trip).
 
 ## Verification before launch
 

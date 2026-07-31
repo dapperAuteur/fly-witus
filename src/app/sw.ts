@@ -17,8 +17,8 @@
 // from src/lib/offline-outbox.ts (idb is already a dep).
 
 import { defaultCache } from "@serwist/next/worker";
-import type { PrecacheEntry, SerwistGlobalConfig } from "serwist";
-import { Serwist } from "serwist";
+import type { PrecacheEntry, RuntimeCaching, SerwistGlobalConfig } from "serwist";
+import { NetworkOnly, Serwist } from "serwist";
 
 declare global {
   interface WorkerGlobalScope extends SerwistGlobalConfig {
@@ -29,12 +29,25 @@ declare global {
 
 declare const self: ServiceWorkerGlobalScope;
 
+// serwist picks the FIRST matching rule, so anything that must bypass the cache has to sit ahead
+// of defaultCache. defaultCache's third rule matches every same-origin GET under /api/ with a
+// NetworkFirst strategy (cacheName "apis", maxAgeSeconds 1440 * 60), which would happily serve a
+// day-old 200 for /api/health after the database went down. A health check answered from cache is
+// worse than no health check, so it is pinned to NetworkOnly.
+const runtimeCaching: RuntimeCaching[] = [
+  {
+    matcher: ({ sameOrigin, url: { pathname } }) => sameOrigin && pathname === "/api/health",
+    handler: new NetworkOnly(),
+  },
+  ...defaultCache,
+];
+
 const serwist = new Serwist({
   precacheEntries: self.__SW_MANIFEST,
   skipWaiting: true,
   clientsClaim: true,
   navigationPreload: true,
-  runtimeCaching: defaultCache,
+  runtimeCaching,
 });
 
 serwist.addEventListeners();

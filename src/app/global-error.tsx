@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import * as Sentry from "@sentry/nextjs";
 import "./globals.css";
 
 // Last-resort boundary for errors thrown in the root layout itself. It
@@ -15,6 +16,9 @@ export default function GlobalError({
 }) {
   useEffect(() => {
     console.error("[global error boundary]", error);
+    // A root-layout crash is the one error nothing else can report: the app shell is gone, so no
+    // client reporter of ours is mounted. Sentry is a no-op when no DSN is configured.
+    Sentry.captureException(error);
   }, [error]);
 
   return (

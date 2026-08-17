@@ -85,7 +85,9 @@ const LimitField: React.FC<{
 
 export const PersonalMinimumsPanel: React.FC<{
   weather: StructuredWeather | null;
-}> = ({ weather }) => {
+  /** Notifies the page so the risk assessment sees the same limits. */
+  onChange?: (minimums: PersonalMinimums) => void;
+}> = ({ weather, onChange }) => {
   const [minimums, setMinimums] = useState<PersonalMinimums>({ platform: "uas" });
   const [editing, setEditing] = useState(false);
   const [loaded, setLoaded] = useState(false);
@@ -93,6 +95,10 @@ export const PersonalMinimumsPanel: React.FC<{
   // Load after mount — localStorage is unavailable during SSR, and reading it
   // in the initial state would produce a hydration mismatch.
   useEffect(() => {
+    // Load only — no onChange here. The page loads the same stored value in
+    // its own mount effect, so notifying it again would be a redundant second
+    // read, and putting `onChange` in this effect's dependencies would re-run
+    // the load on every parent render that passes a fresh callback.
     const stored = loadMinimums("uas");
     setMinimums(stored);
     // Open straight into the editor the first time, when there is nothing to
@@ -106,6 +112,7 @@ export const PersonalMinimumsPanel: React.FC<{
     const next = { ...minimums, ...patch };
     setMinimums(next);
     saveMinimums(next);
+    onChange?.(next);
   };
 
   if (!loaded) return null;

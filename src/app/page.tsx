@@ -7,8 +7,12 @@ import Link from 'next/link';
 import { CHECKLIST_SECTIONS, type ChecklistItem } from '@/lib/checklist-data';
 import { downloadMissionPdf, type Photo } from '@/lib/pdf';
 import { useSession } from '@/lib/auth-client';
-import { fetchWeatherSnapshot, fetchWeatherForZip, reverseLookupZip } from '@/lib/noaa';
+import { fetchWeatherSnapshot, fetchWeatherForZip, reverseLookupZip, lookupZip, type LatLon, type WeatherSnapshot } from '@/lib/noaa';
 import { computeElapsed, shouldReplaceElapsed, totalFlightTime } from '@/lib/flight-time';
+import { PersonalMinimumsPanel } from './_components/personal-minimums-panel';
+import { RiskAssessmentPanel } from './_components/risk-assessment-panel';
+import { evaluateMinimums, loadMinimums, type PersonalMinimums } from '@/lib/personal-minimums';
+import { solarTimes, type SolarTimes } from '@/lib/solar';
 import {
   flushOutbox,
   getMission,
@@ -423,7 +427,34 @@ const UASChecklistApp: React.FC = () => {
   
   const [completed, setCompleted] = useState<{ [key: string]: boolean | string }>({});
   const [subValues, setSubValues] = useState<{ [key: string]: { [subId: string]: string } }>({});
-  const [weather, setWeather] = useState<{ temperature?: string; wind?: string; precipitation?: string }>({});
+  // Partial<WeatherSnapshot> rather than the three display strings: a NOAA
+  // fetch also carries structured wind values, and the personal-minimums check
+  // needs them. Partial because a pilot can also type the display fields in by
+  // hand, in which case the numbers are simply absent.
+  const [weather, setWeather] = useState<Partial<WeatherSnapshot>>({});
+  // Launch coordinates, kept in state so the solar engine can compute daylight
+  // for THIS site. Previously the coords were transient inside the weather
+  // fetch; sunrise/sunset needs them to outlive that call.
+  const [coords, setCoords] = useState<LatLon | null>(null);
+  // Minimums live in the panel that edits them, but the risk assessment needs
+  // the same verdict. Mirrored here and refreshed when the panel saves, so
+  // there is still exactly one place that owns the stored value.
+  const [minimums, setMinimums] = useState<PersonalMinimums>({ platform: 'uas' });
+
+  // Solar times for the launch site. Null until a location is known — the risk
+  // assessment reports daylight as "not assessed" rather than assuming a
+  // default location, which would produce a confident answer about the wrong
+  // place.
+  const solarView: SolarTimes | null = useMemo(
+    () => (coords ? solarTimes(coords.lat, coords.lon) : null),
+    [coords],
+  );
+
+  // Seed the mirrored minimums from storage on mount, matching what the panel
+  // loads, so the risk assessment is populated before the panel is touched.
+  useEffect(() => {
+    setMinimums(loadMinimums('uas'));
+  }, []);
   const [flightRecords, setFlightRecords] = useState<FlightRecord[]>([]);
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [exportingPdf, setExportingPdf] = useState<boolean>(false);
@@ -643,6 +674,7 @@ const UASChecklistApp: React.FC = () => {
           lat: position.coords.latitude,
           lon: position.coords.longitude,
         };
+        setCoords(coords);
         // Run weather + reverse-ZIP in parallel; failures are independent.
         const [snapshot, zcta] = await Promise.all([
           fetchWeatherSnapshot(coords),
@@ -671,7 +703,11 @@ const UASChecklistApp: React.FC = () => {
     }
     setLoadingWeather(true);
     setWeatherError(null);
-    const snapshot = await fetchWeatherForZip(zip);
+    const [snapshot, zipCoords] = await Promise.all([
+      fetchWeatherForZip(zip),
+      lookupZip(zip),
+    ]);
+    if (zipCoords) setCoords(zipCoords);
     if (snapshot) {
       setWeather(snapshot);
     } else {
@@ -1116,6 +1152,13 @@ const UASChecklistApp: React.FC = () => {
         </div>
 
         {/* Flight Log */}
+        <PersonalMinimumsPanel weather={weather} onChange={setMinimums} />
+
+        <RiskAssessmentPanel
+          minimums={evaluateMinimums(minimums, weather)}
+          solar={solarView}
+        />
+
         <FlightLogSection
           flightRecords={flightRecords}
           onAddFlight={handleAddFlight}

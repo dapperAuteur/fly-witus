@@ -128,3 +128,136 @@ export const CHECKLIST_SECTIONS: ChecklistSection[] = [
     ],
   },
 ];
+
+// --- Manned aircraft checklist (plans/08 Phase 2a) -------------------------
+//
+// READ THIS BEFORE EDITING THE LIST BELOW.
+//
+// THE POH/AFM IS AUTHORITATIVE. THIS IS NOT.
+//
+// Every certificated aircraft has a manufacturer checklist, and for any given
+// airframe that document is the correct one — it is aircraft-specific, it is
+// what the pilot was trained on, and it is what a checkride is flown to. A
+// generic list cannot replace it and must never present itself as able to.
+//
+// So what is this for? The same thing the drone list is for: the parts of a
+// pre-flight that happen BEFORE the airplane checklist starts, and that the
+// POH does not cover because they are not about the airplane — documents,
+// weather against your own limits, daylight, and the decision itself. Plus a
+// coarse airframe-agnostic frame that a pilot extends with their own items
+// through the custom-checklist field (roadmap m4), which is where the real
+// aircraft-specific content belongs.
+//
+// The wording throughout is deliberately non-directive: "confirm against your
+// POH", not "set flaps 10". We do not tell anyone how to fly their aircraft.
+//
+// This list has NOT been reviewed by a CFI — see
+// plans/user-tasks/27-bam-source-cfi-rule-reviewer.md. It is content, not
+// regulatory logic, which is why it is not behind the documents-locker
+// feature flag; but it should still get a domain read before it is marketed
+// at manned pilots.
+export const MANNED_CHECKLIST_SECTIONS: ChecklistSection[] = [
+  {
+    title: "Before You Go",
+    items: [
+      { id: "m_poh_aboard", label: "POH/AFM checklist for this aircraft is with me", type: "checkbox", required: true },
+      { id: "m_weather_reviewed", label: "Weather reviewed for departure, route, and destination", type: "weather", required: true },
+      { id: "m_minimums_checked", label: "Conditions checked against my personal minimums", type: "checkbox", required: true },
+      { id: "m_daylight_checked", label: "Daylight and twilight times checked for this flight", type: "checkbox" },
+      { id: "m_notams", label: "NOTAMs and TFRs checked", type: "checkbox", required: true },
+      { id: "m_airspace", label: "Airspace and any required authorizations reviewed", type: "checkbox", required: true },
+      { id: "m_fuel_plan", label: "Fuel plan confirmed, including reserves", type: "checkbox", required: true },
+      { id: "m_wb", label: "Weight and balance computed for this load", type: "checkbox", required: true },
+      { id: "m_performance", label: "Takeoff and landing performance computed for today's conditions", type: "checkbox", required: true },
+      { id: "m_alternate", label: "Alternate plan if this does not work out", type: "checkbox" },
+    ],
+  },
+  {
+    title: "Documents",
+    items: [
+      { id: "m_doc_pilot_cert", label: "Pilot certificate", type: "checkbox", required: true },
+      { id: "m_doc_photo_id", label: "Government photo ID", type: "checkbox", required: true },
+      { id: "m_doc_medical", label: "Medical certificate, BasicMed, or the qualifying document for my operation", type: "checkbox", required: true },
+      { id: "m_doc_endorsements", label: "Logbook and endorsements, if required for this flight", type: "checkbox" },
+      { id: "m_doc_aircraft", label: "Aircraft documents aboard and current (airworthiness, registration, operating limitations, weight and balance)", type: "checkbox", required: true },
+      { id: "m_doc_radio", label: "Radio station licence, if the operation requires one", type: "checkbox" },
+    ],
+  },
+  {
+    title: "Walk-Around",
+    items: [
+      { id: "m_walk_poh", label: "Walk-around flown to the POH/AFM sequence", type: "checkbox", required: true },
+      { id: "m_fuel_quantity", label: "Fuel quantity visually confirmed, not just gauge-read", type: "checkbox", required: true },
+      { id: "m_fuel_sumped", label: "Fuel sumped and checked for water and debris", type: "checkbox", required: true },
+      { id: "m_oil", label: "Oil quantity checked", type: "checkbox", required: true },
+      { id: "m_control_surfaces", label: "Control surfaces free and correct", type: "checkbox", required: true },
+      { id: "m_tires_brakes", label: "Tyres, brakes, and struts checked", type: "checkbox", required: true },
+      { id: "m_covers_removed", label: "Covers, plugs, chocks, and tie-downs removed", type: "checkbox", required: true },
+      { id: "m_damage", label: "No new damage or leaks found", type: "checkbox", required: true },
+    ],
+  },
+  {
+    title: "Cabin and Passengers",
+    items: [
+      { id: "m_pax_brief", label: "Passenger briefing given (belts, doors, exits, sterile cockpit, no-smoking)", type: "checkbox", required: true },
+      { id: "m_belts", label: "Seats and belts secured", type: "checkbox", required: true },
+      { id: "m_baggage", label: "Baggage secured and within limits", type: "checkbox", required: true },
+      { id: "m_controls_free", label: "Controls free and correct from the seat", type: "checkbox", required: true },
+    ],
+  },
+  {
+    title: "Before Takeoff",
+    items: [
+      { id: "m_runup", label: "Run-up completed per the POH/AFM", type: "checkbox", required: true },
+      { id: "m_instruments", label: "Instruments set and cross-checked", type: "checkbox", required: true },
+      { id: "m_departure_brief", label: "Departure briefing given, including abort point and engine-failure plan", type: "checkbox", required: true },
+      { id: "m_wind_check", label: "Wind and crosswind component re-checked against my limits", type: "checkbox", required: true },
+      { id: "m_final_go", label: "Final go/no-go decision made", type: "checkbox", required: true },
+    ],
+  },
+  {
+    title: "After the Flight",
+    items: [
+      { id: "m_secured", label: "Aircraft secured (tie-downs, chocks, controls locked, covers on)", type: "checkbox", required: true },
+      { id: "m_squawks", label: "Any squawks recorded and reported", type: "checkbox", required: true },
+      { id: "m_logged", label: "Flight logged", type: "checkbox", required: true },
+    ],
+  },
+];
+
+/** Which base checklist a given aircraft platform uses. */
+export function checklistForPlatform(platform: "uas" | "manned"): ChecklistSection[] {
+  return platform === "manned" ? MANNED_CHECKLIST_SECTIONS : CHECKLIST_SECTIONS;
+}
+
+/**
+ * Build the sections to render, appending a profile's own items as a final
+ * section (roadmap m4).
+ *
+ * Custom items are given stable ids derived from their position so that a
+ * saved mission keeps pointing at the right item. That does mean REORDERING
+ * or DELETING a custom item shifts the ids of the ones after it, which would
+ * re-associate completion state on an already-saved mission. Acceptable while
+ * these are edit-in-place strings on a profile; if custom items ever get their
+ * own identity, give them real ids and migrate.
+ */
+export function buildChecklistSections(
+  platform: "uas" | "manned",
+  customItems: string[] = [],
+): ChecklistSection[] {
+  const base = checklistForPlatform(platform);
+  const cleaned = customItems.map((s) => s.trim()).filter(Boolean);
+  if (cleaned.length === 0) return base;
+
+  return [
+    ...base,
+    {
+      title: "Your Items",
+      items: cleaned.map((label, idx) => ({
+        id: `custom_${idx}`,
+        label,
+        type: "checkbox" as const,
+      })),
+    },
+  ];
+}

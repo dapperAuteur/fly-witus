@@ -63,6 +63,10 @@ export async function PATCH(req: Request, ctx: Params) {
   if (input.weightGrams !== undefined) updates.weightGrams = input.weightGrams ?? null;
   if (input.regNumber !== undefined) updates.regNumber = input.regNumber ?? null;
   if (input.notes !== undefined) updates.notes = input.notes ?? null;
+  if (input.platform !== undefined) updates.platform = input.platform;
+  if (input.categoryClass !== undefined) updates.categoryClass = input.categoryClass ?? null;
+  if (input.typeRating !== undefined) updates.typeRating = input.typeRating ?? null;
+  if (input.customChecklist !== undefined) updates.customChecklist = input.customChecklist;
 
   const [updated] = await db
     .update(aircraftProfiles)

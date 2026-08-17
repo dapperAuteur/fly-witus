@@ -37,6 +37,12 @@ const schema = z.object({
   NEXT_PUBLIC_CASHAPP_USERNAME: z.string().optional(),
   NEXT_PUBLIC_CASHAPP_QR_PATH: z.string().optional(),
 
+  // plans/08 Phase 2b. The documents locker asserts which documents an
+  // operation requires, which is regulatory logic no qualified human has
+  // reviewed yet (plans/user-tasks/27). Off unless explicitly switched on.
+  // Any value other than "true" — including absent — keeps it hidden.
+  NEXT_PUBLIC_FEATURE_DOCUMENTS_LOCKER: z.string().optional(),
+
   NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME: z.string().optional(),
   CLOUDINARY_API_KEY: z.string().optional(),
   CLOUDINARY_API_SECRET: z.string().optional(),
@@ -99,6 +105,7 @@ const input = {
   NEXT_PUBLIC_CASHAPP_USERNAME: process.env.NEXT_PUBLIC_CASHAPP_USERNAME,
   NEXT_PUBLIC_CASHAPP_QR_PATH: process.env.NEXT_PUBLIC_CASHAPP_QR_PATH,
 
+  NEXT_PUBLIC_FEATURE_DOCUMENTS_LOCKER: process.env.NEXT_PUBLIC_FEATURE_DOCUMENTS_LOCKER,
   NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
   CLOUDINARY_API_KEY: process.env.CLOUDINARY_API_KEY,
   CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET,

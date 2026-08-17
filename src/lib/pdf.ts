@@ -10,7 +10,11 @@
 // works once those columns get UI.
 
 import { jsPDF } from "jspdf";
-import { CHECKLIST_SECTIONS, type ChecklistItem } from "./checklist-data";
+import {
+  CHECKLIST_SECTIONS,
+  type ChecklistSection,
+  type ChecklistItem,
+} from "./checklist-data";
 
 export interface FlightRecord {
   flightNumber: number;
@@ -44,6 +48,11 @@ export interface MissionPdfInput {
   // Per-item completion. Boolean for checklist items, string for sub-fields
   // (we flatten subfields as `${itemId}_${subId}` per page.tsx convention).
   completed: Record<string, boolean | string>;
+  // The checklist this mission was flown against — drone, manned, plus any
+  // custom items on the aircraft profile. Optional: omitted means the drone
+  // sections, which is every mission logged before profiles carried a
+  // platform, and keeps their PDFs byte-for-byte what they were.
+  sections?: ChecklistSection[];
   flightRecords: FlightRecord[];
   // Optional v3-spec fields. Render only when present so the generator
   // stays useful before the UI captures them.
@@ -392,7 +401,10 @@ export async function generateMissionPdf(input: MissionPdfInput): Promise<jsPDF>
   ]);
   cursor.y += 8;
 
-  for (const section of CHECKLIST_SECTIONS) {
+  // Render whatever checklist the mission was actually flown against. Falling
+  // back to the drone sections keeps every mission saved before profiles were
+  // platform-aware rendering exactly as it did before.
+  for (const section of input.sections ?? CHECKLIST_SECTIONS) {
     drawSectionTitle(doc, cursor, section.title);
     for (const item of section.items) {
       drawChecklistItem(doc, cursor, item, input.completed);

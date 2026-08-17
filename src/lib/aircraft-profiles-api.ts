@@ -12,6 +12,16 @@ export const aircraftProfileInputSchema = z.object({
   weightGrams: z.number().int().min(0).max(25_000).nullish(),
   regNumber: z.string().trim().max(60).nullish(),
   notes: z.string().trim().max(2_000).nullish(),
+
+  // plans/08 Phase 2a. Defaults to "uas" so existing clients that do not send
+  // the field keep creating drone profiles, which is what they mean.
+  platform: z.enum(["uas", "manned"]).default("uas"),
+  categoryClass: z.string().trim().max(60).nullish(),
+  typeRating: z.string().trim().max(60).nullish(),
+  // Roadmap m4. Capped at 50 items of 200 chars — generous for a real
+  // checklist, tight enough that the jsonb column cannot be used as storage
+  // for something it was not meant for.
+  customChecklist: z.array(z.string().trim().min(1).max(200)).max(50).default([]),
 });
 
 export const aircraftProfileUpdateSchema = aircraftProfileInputSchema.partial();

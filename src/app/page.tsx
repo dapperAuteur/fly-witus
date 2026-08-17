@@ -4,7 +4,7 @@ import React, { Suspense, useState, useEffect, useMemo } from 'react';
 import { Analytics } from "@vercel/analytics/next"
 import Image from 'next/image';
 import Link from 'next/link';
-import { CHECKLIST_SECTIONS, type ChecklistItem } from '@/lib/checklist-data';
+import { buildChecklistSections, type ChecklistItem, type ChecklistSection } from '@/lib/checklist-data';
 import { downloadMissionPdf, type Photo } from '@/lib/pdf';
 import { useSession } from '@/lib/auth-client';
 import { fetchWeatherSnapshot, fetchWeatherForZip, reverseLookupZip, lookupZip, type LatLon, type WeatherSnapshot } from '@/lib/noaa';
@@ -32,6 +32,11 @@ interface AircraftProfile {
   name: string;
   type: string;
   certificateNumber: string;
+  // plans/08 Phase 2a. Optional so profiles saved before this existed still
+  // parse out of localStorage; absent means 'uas', which is what every
+  // pre-existing profile is.
+  platform?: 'uas' | 'manned';
+  customChecklist?: string[];
 }
 
 interface MissionLog {
@@ -142,7 +147,10 @@ const exportToJSON = (mission: MissionLog): void => {
   URL.revokeObjectURL(url);
 };
 
-const exportToPDF = async (mission: MissionLog): Promise<void> => {
+const exportToPDF = async (
+  mission: MissionLog,
+  sections?: ChecklistSection[],
+): Promise<void> => {
   // Real PDF via src/lib/pdf.ts. Fixes the iOS Safari "open in print
   // dialog" issue from v3 §0 — jsPDF emits a real PDF blob the browser
   // can download as a file. async because photo embedding fetches
@@ -158,6 +166,7 @@ const exportToPDF = async (mission: MissionLog): Promise<void> => {
     completed: mission.completed,
     flightRecords: mission.flightRecords,
     photos: mission.photos,
+    sections,
   });
 };
 
@@ -797,19 +806,37 @@ const UASChecklistApp: React.FC = () => {
   };
 
   const handleAddProfile = () => {
-    const name = prompt('Aircraft name (e.g., "My Mavic 3"):');
+    const name = prompt('Aircraft name (e.g., "My Mavic 3" or "N12345"):');
     if (!name) return;
-    
-    const type = prompt('Aircraft type (e.g., "DJI Mavic 3"):');
+
+    const type = prompt('Aircraft type (e.g., "DJI Mavic 3" or "Cessna 172S"):');
     if (!type) return;
-    
+
     const cert = prompt('Certificate number (optional):') || '';
-    
+
+    // Which checklist this aircraft gets. Asked as a plain question rather
+    // than inferred from the model string — guessing "172" means an airplane
+    // would be right often and wrong badly.
+    const isManned = confirm(
+      'Is this a manned aircraft you fly from inside?\n\nOK = manned aircraft (uses the manned pre-flight checklist)\nCancel = drone / UAS (uses the Part 107 checklist)',
+    );
+
+    const customRaw = prompt(
+      'Custom checklist items for this aircraft, one per line (optional).\n\nThese are appended to the base checklist.',
+    ) || '';
+    const customChecklist = customRaw
+      .split('\n')
+      .map(line => line.trim())
+      .filter(Boolean)
+      .slice(0, 50);
+
     const newProfile: AircraftProfile = {
       id: Date.now().toString(),
       name,
       type,
       certificateNumber: cert,
+      platform: isManned ? 'manned' : 'uas',
+      customChecklist,
     };
     
     const updatedProfiles = [...aircraftProfiles, newProfile];
@@ -839,16 +866,26 @@ const UASChecklistApp: React.FC = () => {
   const handleExportPDF = async (mission: MissionLog) => {
     setExportingPdf(true);
     try {
-      await exportToPDF(mission);
+      await exportToPDF(mission, activeSections);
     } finally {
       setExportingPdf(false);
     }
   };
 
+  // The checklist itself now depends on which aircraft is selected. A DJI
+  // walk-around is meaningless for a 172 and vice versa, so the base list
+  // switches on the profile's platform and the pilot's own items are appended
+  // (roadmap m4). No profile selected falls back to the drone list, which is
+  // what this product has always been.
+  const activeSections = useMemo(() => {
+    const profile = aircraftProfiles.find(p => p.id === selectedProfileId);
+    return buildChecklistSections(profile?.platform ?? 'uas', profile?.customChecklist ?? []);
+  }, [aircraftProfiles, selectedProfileId]);
+
   // Calculate progress
   const requiredItems = useMemo(() => {
     const items: string[] = [];
-    CHECKLIST_SECTIONS.forEach(section => {
+    activeSections.forEach(section => {
       section.items.forEach(item => {
         if (item.required) {
           items.push(item.id);
@@ -856,7 +893,7 @@ const UASChecklistApp: React.FC = () => {
       });
     });
     return items;
-  }, []);
+  }, [activeSections]);
 
   const completedRequired = useMemo(() => {
     return requiredItems.filter(id => completed[id]).length;
@@ -1091,7 +1128,7 @@ const UASChecklistApp: React.FC = () => {
         </div>
 
         {/* Checklist Sections */}
-        {CHECKLIST_SECTIONS.map((section, idx) => (
+        {activeSections.map((section, idx) => (
           <div key={idx} className="bg-card text-card-foreground rounded-2xl shadow-lg p-6 mb-6 border-t-4 border-gray-400">
             <h2 className="text-2xl font-bold text-card-foreground mb-4">{section.title}</h2>
             <div className="space-y-1">

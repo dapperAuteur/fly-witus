@@ -54,6 +54,10 @@ export async function POST(req: Request) {
       weightGrams: input.weightGrams ?? null,
       regNumber: input.regNumber ?? null,
       notes: input.notes ?? null,
+      platform: input.platform,
+      categoryClass: input.categoryClass ?? null,
+      typeRating: input.typeRating ?? null,
+      customChecklist: input.customChecklist,
     })
     .returning();
 

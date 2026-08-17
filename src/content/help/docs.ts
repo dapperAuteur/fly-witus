@@ -321,6 +321,154 @@ export const HELP_DOCS: HelpDoc[] = [
       },
     ],
   },
+  {
+    slug: "personal-minimums",
+    title: "Personal minimums",
+    category: "Missions & flights",
+    summary:
+      "Set the wind, gust, crosswind, and cloud limits you fly in, and have every pre-flight check the forecast against them.",
+    keywords: [
+      "minimums",
+      "wind",
+      "gust",
+      "crosswind",
+      "limits",
+      "comfort",
+      "weather",
+      "knots",
+      "runway heading",
+    ],
+    body: [
+      {
+        kind: "paragraph",
+        text: "Personal minimums are the conditions you have decided in advance that you fly in. Deciding them on the ground, calmly, is the point — it is much easier to hold a limit you set last week than one you are inventing while a client waits.",
+      },
+      { kind: "heading", text: "Setting your limits" },
+      {
+        kind: "steps",
+        items: [
+          "Scroll to the Personal Minimums panel on the checklist page.",
+          "Enter a maximum sustained wind and gust in knots.",
+          "Optionally add a maximum cloud cover percentage.",
+          "Leave any field blank to skip that check entirely.",
+        ],
+      },
+      {
+        kind: "paragraph",
+        text: "Limits are saved on the device you set them on. They are not synced between devices yet.",
+      },
+      { kind: "heading", text: "Crosswind" },
+      {
+        kind: "paragraph",
+        text: "To check a crosswind limit we also need a runway or landing direction, because a crosswind only exists relative to the direction you are landing. Enter that heading in degrees TRUE — not the painted runway number, which is magnetic. If you leave it blank, the crosswind limit is shown as unchecked rather than quietly ignored.",
+      },
+      { kind: "heading", text: "What the results mean" },
+      {
+        kind: "list",
+        items: [
+          "Within limits — the forecast value is comfortably inside the number you set.",
+          "At your limit — the forecast is at or very close to your limit. Worth a second look.",
+          "Outside your limits — the forecast exceeds what you said you fly in.",
+          "Not reported — the forecast did not include that value, so we could NOT check it. This is not the same as passing.",
+        ],
+      },
+      {
+        kind: "paragraph",
+        text: "That last one matters. National Weather Service coverage is uneven and some values are simply absent for some locations. We will never show a green check for a value nobody measured, because that would be the most misleading thing this feature could do.",
+      },
+      {
+        kind: "paragraph",
+        text: "All of it is advisory. These are your own numbers checked against a forecast — not a clearance, and not a legal determination. Conditions on site can differ from any forecast, and the decision to fly is yours.",
+      },
+    ],
+  },
+  {
+    slug: "risk-assessment",
+    title: "Pre-flight risk assessment",
+    category: "Missions & flights",
+    summary:
+      "How the PAVE-structured risk score is built, what it covers, and — importantly — what it does not cover.",
+    keywords: [
+      "risk",
+      "FRAT",
+      "PAVE",
+      "go no-go",
+      "score",
+      "daylight",
+      "sunset",
+      "pressure",
+      "safety",
+    ],
+    body: [
+      {
+        kind: "paragraph",
+        text: "The risk assessment is a structured prompt to think before you fly. It groups factors using PAVE — Pilot, Aircraft, enVironment, External pressures — the same framework taught in general aviation, so it should read as something familiar rather than a number we invented.",
+      },
+      { kind: "heading", text: "What it looks at today" },
+      {
+        kind: "list",
+        items: [
+          "Weather against your personal minimums.",
+          "Daylight remaining after your planned flight time, computed from your launch location.",
+          "Whether you are under schedule or client pressure — you tell it this.",
+          "Whether the site is new to you.",
+        ],
+      },
+      { kind: "heading", text: "What it does NOT look at" },
+      {
+        kind: "paragraph",
+        text: "Pilot fitness and aircraft condition are not assessed yet. Rather than score them as fine, we leave them out of the maths entirely and label them 'not assessed' — a score that looked at half the picture and reported low risk would be worse than no score at all. Assess both yourself before you fly.",
+      },
+      { kind: "heading", text: "Reading the result" },
+      {
+        kind: "paragraph",
+        text: "The band — low, moderate, elevated, or high — always comes with what drove it and what to do about it. A number on its own is not useful. Note that any single serious factor pushes the band to at least elevated: three fine things do not average out one real problem.",
+      },
+      {
+        kind: "paragraph",
+        text: "Advisory only. This is not a clearance, an authorisation, or a legal determination, and it does not decide whether an operation is permitted. That judgement is yours as pilot in command.",
+      },
+    ],
+  },
+  {
+    slug: "daylight-and-flight-time",
+    title: "Daylight and flight time",
+    category: "Missions & flights",
+    summary:
+      "Sunrise, sunset, and civil twilight for your launch site, and how elapsed flight time is filled in for you.",
+    keywords: [
+      "sunset",
+      "sunrise",
+      "twilight",
+      "daylight",
+      "night",
+      "hobbs",
+      "tachometer",
+      "elapsed",
+      "flight time",
+      "duration",
+    ],
+    body: [
+      { kind: "heading", text: "Daylight" },
+      {
+        kind: "paragraph",
+        text: "Once you have set a launch location — by fetching weather from your position or by entering a ZIP code — we compute sunrise, sunset, and civil twilight for that exact spot. The calculation runs on your device, so it keeps working with no signal.",
+      },
+      {
+        kind: "paragraph",
+        text: "These are astronomical times, accurate to about a minute at sea level. They are not a statement about what is legal: rules on night operation differ, have changed over the years, and depend on your equipment and authorisations. Check the current regulations for your operation.",
+      },
+      { kind: "heading", text: "Flight time" },
+      {
+        kind: "paragraph",
+        text: "A drone has no hobbs meter and no tachometer, so nothing on board counts hours for you. Enter a launch time and a landing time and the elapsed time fills itself in, including for flights that cross midnight. The mission totals every flight you log.",
+      },
+      {
+        kind: "paragraph",
+        text: "If you type your own elapsed time, we keep it. Your entry always wins over ours — it is your logbook.",
+      },
+    ],
+  },
 ];
 
 export function getHelpDoc(slug: string): HelpDoc | undefined {

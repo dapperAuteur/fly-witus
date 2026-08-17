@@ -7,7 +7,12 @@ import Link from 'next/link';
 import { CHECKLIST_SECTIONS, type ChecklistItem } from '@/lib/checklist-data';
 import { downloadMissionPdf, type Photo } from '@/lib/pdf';
 import { useSession } from '@/lib/auth-client';
-import { fetchWeatherSnapshot, fetchWeatherForZip, reverseLookupZip } from '@/lib/noaa';
+import { fetchWeatherSnapshot, fetchWeatherForZip, reverseLookupZip, lookupZip, type LatLon, type WeatherSnapshot } from '@/lib/noaa';
+import { computeElapsed, shouldReplaceElapsed, totalFlightTime } from '@/lib/flight-time';
+import { PersonalMinimumsPanel } from './_components/personal-minimums-panel';
+import { RiskAssessmentPanel } from './_components/risk-assessment-panel';
+import { evaluateMinimums, loadMinimums, type PersonalMinimums } from '@/lib/personal-minimums';
+import { solarTimes, type SolarTimes } from '@/lib/solar';
 import {
   flushOutbox,
   getMission,
@@ -27,7 +32,6 @@ interface AircraftProfile {
   name: string;
   type: string;
   certificateNumber: string;
-  customChecklist?: string[];
 }
 
 interface MissionLog {
@@ -276,6 +280,11 @@ const FlightLogSection: React.FC<{
   onAddFlight: () => void;
   onUpdateFlight: (index: number, field: keyof FlightRecord, value: string) => void;
 }> = ({ flightRecords, onAddFlight, onUpdateFlight }) => {
+  // Mission total stands in for the hobbs meter a UAS does not have. `skipped`
+  // counts flights whose elapsed time we could not read, so the total can
+  // announce itself as partial instead of quietly under-reporting.
+  const { total, counted, skipped } = totalFlightTime(flightRecords);
+
   return (
     <div className="bg-card text-card-foreground rounded-2xl shadow-lg p-6 border-t-4 border-fuchsia-500 mt-6">
       <div className="flex justify-between items-center mb-4">
@@ -287,7 +296,27 @@ const FlightLogSection: React.FC<{
           + Add Flight
         </button>
       </div>
-      
+
+      {counted > 0 && (
+        <div className="mb-4 px-4 py-3 bg-muted rounded-lg border border-border">
+          <p className="text-sm text-muted-foreground">
+            Total flight time
+            <span className="ml-2 text-lg font-bold text-card-foreground tabular-nums">
+              {total}
+            </span>
+            <span className="ml-2">
+              across {counted} {counted === 1 ? 'flight' : 'flights'}
+            </span>
+          </p>
+          {skipped > 0 && (
+            <p className="text-xs text-amber-700 dark:text-amber-500 mt-1">
+              {skipped} {skipped === 1 ? 'flight is' : 'flights are'} missing an elapsed
+              time and {skipped === 1 ? 'is' : 'are'} not included in this total.
+            </p>
+          )}
+        </div>
+      )}
+
       {flightRecords.length === 0 && (
         <p className="text-muted-foreground text-center py-4">No flights recorded yet.</p>
       )}
@@ -338,14 +367,20 @@ const FlightLogSection: React.FC<{
             </div>
             
             <div>
-              <label className="text-sm font-semibold text-muted-foreground block mb-1">Elapsed Time:</label>
+              <label className="text-sm font-semibold text-muted-foreground block mb-1">
+                Elapsed Time:
+              </label>
               <input
                 type="text"
                 value={flight.elapsedTime}
                 onChange={(e) => onUpdateFlight(idx, 'elapsedTime', e.target.value)}
                 placeholder="e.g., 00:23:45"
+                aria-describedby={`elapsed-hint-${idx}`}
                 className="w-full px-3 py-2 border border-border rounded focus:ring-2 focus:ring-fuchsia-500 focus:border-fuchsia-500"
               />
+              <p id={`elapsed-hint-${idx}`} className="text-xs text-muted-foreground mt-1">
+                Filled in from launch and landing times. Edit it and your value stays.
+              </p>
             </div>
             
             <div>
@@ -392,7 +427,34 @@ const UASChecklistApp: React.FC = () => {
   
   const [completed, setCompleted] = useState<{ [key: string]: boolean | string }>({});
   const [subValues, setSubValues] = useState<{ [key: string]: { [subId: string]: string } }>({});
-  const [weather, setWeather] = useState<{ temperature?: string; wind?: string; precipitation?: string }>({});
+  // Partial<WeatherSnapshot> rather than the three display strings: a NOAA
+  // fetch also carries structured wind values, and the personal-minimums check
+  // needs them. Partial because a pilot can also type the display fields in by
+  // hand, in which case the numbers are simply absent.
+  const [weather, setWeather] = useState<Partial<WeatherSnapshot>>({});
+  // Launch coordinates, kept in state so the solar engine can compute daylight
+  // for THIS site. Previously the coords were transient inside the weather
+  // fetch; sunrise/sunset needs them to outlive that call.
+  const [coords, setCoords] = useState<LatLon | null>(null);
+  // Minimums live in the panel that edits them, but the risk assessment needs
+  // the same verdict. Mirrored here and refreshed when the panel saves, so
+  // there is still exactly one place that owns the stored value.
+  const [minimums, setMinimums] = useState<PersonalMinimums>({ platform: 'uas' });
+
+  // Solar times for the launch site. Null until a location is known — the risk
+  // assessment reports daylight as "not assessed" rather than assuming a
+  // default location, which would produce a confident answer about the wrong
+  // place.
+  const solarView: SolarTimes | null = useMemo(
+    () => (coords ? solarTimes(coords.lat, coords.lon) : null),
+    [coords],
+  );
+
+  // Seed the mirrored minimums from storage on mount, matching what the panel
+  // loads, so the risk assessment is populated before the panel is touched.
+  useEffect(() => {
+    setMinimums(loadMinimums('uas'));
+  }, []);
   const [flightRecords, setFlightRecords] = useState<FlightRecord[]>([]);
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [exportingPdf, setExportingPdf] = useState<boolean>(false);
@@ -570,7 +632,31 @@ const UASChecklistApp: React.FC = () => {
   const handleUpdateFlight = (index: number, field: keyof FlightRecord, value: string) => {
     setFlightRecords(prev => {
       const updated = [...prev];
-      updated[index] = { ...updated[index], [field]: value };
+      const before = updated[index];
+      const after = { ...before, [field]: value };
+
+      // Auto-compute elapsed time when either clock time changes. A UAS has no
+      // hobbs meter, so the pilot is the only thing counting — doing the
+      // subtraction for them is roadmap item m1.
+      //
+      // We only overwrite an elapsed value that is empty or that still matches
+      // what we computed from the PREVIOUS times, i.e. a value we almost
+      // certainly wrote ourselves. A hand-corrected time survives, because in a
+      // logbook the pilot's entry is the authoritative one.
+      if (field === 'launchTime' || field === 'landingTime') {
+        const nextElapsed = computeElapsed(after.launchTime, after.landingTime);
+        if (
+          nextElapsed &&
+          shouldReplaceElapsed(
+            before.elapsedTime,
+            computeElapsed(before.launchTime, before.landingTime),
+          )
+        ) {
+          after.elapsedTime = nextElapsed;
+        }
+      }
+
+      updated[index] = after;
       return updated;
     });
   };
@@ -588,6 +674,7 @@ const UASChecklistApp: React.FC = () => {
           lat: position.coords.latitude,
           lon: position.coords.longitude,
         };
+        setCoords(coords);
         // Run weather + reverse-ZIP in parallel; failures are independent.
         const [snapshot, zcta] = await Promise.all([
           fetchWeatherSnapshot(coords),
@@ -616,7 +703,11 @@ const UASChecklistApp: React.FC = () => {
     }
     setLoadingWeather(true);
     setWeatherError(null);
-    const snapshot = await fetchWeatherForZip(zip);
+    const [snapshot, zipCoords] = await Promise.all([
+      fetchWeatherForZip(zip),
+      lookupZip(zip),
+    ]);
+    if (zipCoords) setCoords(zipCoords);
     if (snapshot) {
       setWeather(snapshot);
     } else {
@@ -1061,6 +1152,13 @@ const UASChecklistApp: React.FC = () => {
         </div>
 
         {/* Flight Log */}
+        <PersonalMinimumsPanel weather={weather} onChange={setMinimums} />
+
+        <RiskAssessmentPanel
+          minimums={evaluateMinimums(minimums, weather)}
+          solar={solarView}
+        />
+
         <FlightLogSection
           flightRecords={flightRecords}
           onAddFlight={handleAddFlight}

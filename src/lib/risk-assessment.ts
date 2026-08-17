@@ -20,17 +20,19 @@
 // saying what specifically drove it. The number is an index into the
 // explanation, not the product.
 //
-// PARTIAL BY DESIGN IN PHASE 1
+// PARTIAL BY DESIGN, AND IT SAYS WHICH PART
 //
-// Pilot and Aircraft cannot be assessed yet — IMSAFE and the maintenance
-// tracker are both later phases (plans/08). Rather than quietly scoring those
-// categories as zero, which would flatter every assessment, unassessed
-// categories are excluded from the maths and named in the output. A tool that
-// says "low risk" while having looked at half the picture is worse than one
-// that admits the gap.
+// Aircraft still cannot be assessed — the maintenance tracker is a later phase
+// (plans/08). Pilot became assessable in Phase 2 with IMSAFE, but only once
+// the pilot actually fills it in; an untouched IMSAFE is 'not-assessed', not
+// 'fine'. Rather than quietly scoring an unassessed category as zero, which
+// would flatter every assessment, those categories are excluded from the
+// maths and named in the output. A tool that says "low risk" while having
+// looked at half the picture is worse than one that admits the gap.
 //
 // ADVISORY. Nothing here blocks a flight or asserts a legal conclusion.
 
+import type { ImsafeSummary } from "./imsafe";
 import type { MinimumsVerdict } from "./personal-minimums";
 import { minutesUntilSunset, type SolarTimes } from "./solar";
 
@@ -76,6 +78,8 @@ export interface RiskInputs {
   externalPressure?: boolean;
   /** Pilot declares the site is unfamiliar to them. */
   unfamiliarSite?: boolean;
+  /** IMSAFE self-assessment. Undefined or untouched means not assessed. */
+  imsafe?: ImsafeSummary;
   /** Evaluation time. Injectable so the assessment is testable. */
   now?: Date;
 }
@@ -238,6 +242,73 @@ function daylightFactor(
 }
 
 /**
+ * Pilot fitness, from the IMSAFE self-assessment.
+ *
+ * An untouched or partially-filled IMSAFE reports 'not-assessed' rather than
+ * scoring zero. This is the same rule the minimums check follows: not having
+ * asked is not the same as having asked and been reassured, and the one thing
+ * this module must never do is let a blank form read as a clean bill.
+ *
+ * Flags are weighted heavily because pilot state is the category that shows up
+ * in accident causation most reliably, and because a pilot who flags one has
+ * already done the hard part — noticing.
+ */
+function imsafeFactor(imsafe: ImsafeSummary | undefined): RiskFactor {
+  const base = {
+    id: "pilot-fitness",
+    category: "pilot" as const,
+    label: "Pilot fitness (IMSAFE)",
+    maxPoints: 4,
+  };
+
+  if (!imsafe || imsafe.untouched) {
+    return {
+      ...base,
+      status: "not-assessed",
+      points: 0,
+      maxPoints: 0,
+      detail: "IMSAFE not started. Six questions, and they only work if you answer them.",
+    };
+  }
+
+  if (!imsafe.complete) {
+    return {
+      ...base,
+      status: "caution",
+      points: 1,
+      detail: `IMSAFE partly answered — ${imsafe.unanswered.length} of ${imsafe.totalCount} still blank (${imsafe.unanswered
+        .map((i) => i.label.toLowerCase())
+        .join(", ")}).`,
+    };
+  }
+
+  if (imsafe.flagged.length === 0) {
+    return {
+      ...base,
+      status: "ok",
+      points: 0,
+      detail: "IMSAFE complete with nothing flagged.",
+    };
+  }
+
+  const names = imsafe.flagged.map((i) => i.label.toLowerCase()).join(", ");
+  if (imsafe.flagged.length === 1) {
+    return {
+      ...base,
+      status: "elevated",
+      points: 3,
+      detail: `You flagged ${names} on IMSAFE.`,
+    };
+  }
+  return {
+    ...base,
+    status: "elevated",
+    points: 4,
+    detail: `You flagged ${imsafe.flagged.length} IMSAFE items: ${names}.`,
+  };
+}
+
+/**
  * Assemble a risk assessment.
  *
  * Pilot and Aircraft factors are emitted as 'not-assessed' placeholders rather
@@ -272,15 +343,7 @@ export function assessRisk(inputs: RiskInputs): RiskAssessment {
         ? "You have not flown this site before — allow extra time for the survey."
         : "Familiar site.",
     },
-    {
-      id: "pilot-fitness",
-      category: "pilot",
-      label: "Pilot fitness (IMSAFE)",
-      status: "not-assessed",
-      points: 0,
-      maxPoints: 0,
-      detail: "IMSAFE self-assessment is not part of this release.",
-    },
+    imsafeFactor(inputs.imsafe),
     {
       id: "aircraft-condition",
       category: "aircraft",

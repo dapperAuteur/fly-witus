@@ -13,6 +13,13 @@ import { PersonalMinimumsPanel } from './_components/personal-minimums-panel';
 import { RiskAssessmentPanel } from './_components/risk-assessment-panel';
 import { evaluateMinimums, loadMinimums, type PersonalMinimums } from '@/lib/personal-minimums';
 import { solarTimes, type SolarTimes } from '@/lib/solar';
+import { ImsafePanel } from './_components/imsafe-panel';
+import {
+  imsafeFromCompleted,
+  imsafeToCompleted,
+  summarizeImsafe,
+  type ImsafeState,
+} from '@/lib/imsafe';
 import {
   flushOutbox,
   getMission,
@@ -440,6 +447,10 @@ const UASChecklistApp: React.FC = () => {
   // the same verdict. Mirrored here and refreshed when the panel saves, so
   // there is still exactly one place that owns the stored value.
   const [minimums, setMinimums] = useState<PersonalMinimums>({ platform: 'uas' });
+  // IMSAFE lives in page state and is folded into the mission's `completed`
+  // map on save — it belongs to one mission and is never queried across them,
+  // so a table for six answers would be a migration for nothing.
+  const [imsafe, setImsafe] = useState<ImsafeState>({});
 
   // Solar times for the launch site. Null until a location is known — the risk
   // assessment reports daylight as "not assessed" rather than assuming a
@@ -496,6 +507,7 @@ const UASChecklistApp: React.FC = () => {
       setSelectedProfileId(m.profileId ?? '');
       setCompleted(m.completed);
       setWeather(m.weather);
+      setImsafe(imsafeFromCompleted(m.completed));
       setFlightRecords(m.flightRecords);
       setPhotos(m.photos ?? []);
       setEditingMissionId(editIdFromUrl);
@@ -516,6 +528,7 @@ const UASChecklistApp: React.FC = () => {
       if (currentMission.profileId) setSelectedProfileId(currentMission.profileId);
       if (currentMission.completed) setCompleted(currentMission.completed);
       if (currentMission.weather) setWeather(currentMission.weather);
+      if (currentMission.completed) setImsafe(imsafeFromCompleted(currentMission.completed));
       if (currentMission.flightRecords) setFlightRecords(currentMission.flightRecords);
       if (currentMission.photos) setPhotos(currentMission.photos);
     }
@@ -573,13 +586,13 @@ const UASChecklistApp: React.FC = () => {
       aircraftType,
       rpCert,
       profileId: selectedProfileId,
-      completed,
+      completed: { ...completed, ...imsafeToCompleted(imsafe) },
       weather,
       flightRecords,
       photos,
     };
     saveCurrentMission(currentMission);
-  }, [pilotName, location, aircraftType, rpCert, selectedProfileId, completed, weather, flightRecords, photos]);
+  }, [pilotName, location, aircraftType, rpCert, selectedProfileId, completed, imsafe, weather, flightRecords, photos]);
 
   // --- HANDLERS ---
   const handleToggle = (itemId: string) => {
@@ -729,6 +742,9 @@ const UASChecklistApp: React.FC = () => {
         flattenedCompleted[`${itemId}_${subId}`] = value;
       });
     });
+    // IMSAFE answers ride along in the same map, under an imsafe_ prefix so
+    // they cannot collide with a checklist item id.
+    Object.assign(flattenedCompleted, imsafeToCompleted(imsafe));
 
     const missionLog: MissionLog = {
       missionNumber,
@@ -1154,9 +1170,12 @@ const UASChecklistApp: React.FC = () => {
         {/* Flight Log */}
         <PersonalMinimumsPanel weather={weather} onChange={setMinimums} />
 
+        <ImsafePanel state={imsafe} onChange={setImsafe} />
+
         <RiskAssessmentPanel
           minimums={evaluateMinimums(minimums, weather)}
           solar={solarView}
+          imsafe={summarizeImsafe(imsafe)}
         />
 
         <FlightLogSection

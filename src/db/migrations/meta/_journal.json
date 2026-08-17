@@ -71,6 +71,13 @@
       "when": 1786938961310,
       "tag": "0009_dark_ozymandias",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1786939790627,
+      "tag": "0010_volatile_whiplash",
+      "breakpoints": true
     }
   ]
 }

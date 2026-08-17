@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit",
     "check:scrub": "tsx scripts/check-sentry-scrub.ts",
     "verify:solar": "tsx scripts/verify-solar.ts",
+    "verify:flight-time": "tsx scripts/verify-flight-time.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx --env-file=.env.local scripts/migrate.ts",
     "db:migrate:prod": "tsx scripts/migrate.ts",

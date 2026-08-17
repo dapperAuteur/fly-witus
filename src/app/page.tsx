@@ -8,6 +8,7 @@ import { CHECKLIST_SECTIONS, type ChecklistItem } from '@/lib/checklist-data';
 import { downloadMissionPdf, type Photo } from '@/lib/pdf';
 import { useSession } from '@/lib/auth-client';
 import { fetchWeatherSnapshot, fetchWeatherForZip, reverseLookupZip } from '@/lib/noaa';
+import { computeElapsed, shouldReplaceElapsed, totalFlightTime } from '@/lib/flight-time';
 import {
   flushOutbox,
   getMission,
@@ -275,6 +276,11 @@ const FlightLogSection: React.FC<{
   onAddFlight: () => void;
   onUpdateFlight: (index: number, field: keyof FlightRecord, value: string) => void;
 }> = ({ flightRecords, onAddFlight, onUpdateFlight }) => {
+  // Mission total stands in for the hobbs meter a UAS does not have. `skipped`
+  // counts flights whose elapsed time we could not read, so the total can
+  // announce itself as partial instead of quietly under-reporting.
+  const { total, counted, skipped } = totalFlightTime(flightRecords);
+
   return (
     <div className="bg-card text-card-foreground rounded-2xl shadow-lg p-6 border-t-4 border-fuchsia-500 mt-6">
       <div className="flex justify-between items-center mb-4">
@@ -286,7 +292,27 @@ const FlightLogSection: React.FC<{
           + Add Flight
         </button>
       </div>
-      
+
+      {counted > 0 && (
+        <div className="mb-4 px-4 py-3 bg-muted rounded-lg border border-border">
+          <p className="text-sm text-muted-foreground">
+            Total flight time
+            <span className="ml-2 text-lg font-bold text-card-foreground tabular-nums">
+              {total}
+            </span>
+            <span className="ml-2">
+              across {counted} {counted === 1 ? 'flight' : 'flights'}
+            </span>
+          </p>
+          {skipped > 0 && (
+            <p className="text-xs text-amber-700 dark:text-amber-500 mt-1">
+              {skipped} {skipped === 1 ? 'flight is' : 'flights are'} missing an elapsed
+              time and {skipped === 1 ? 'is' : 'are'} not included in this total.
+            </p>
+          )}
+        </div>
+      )}
+
       {flightRecords.length === 0 && (
         <p className="text-muted-foreground text-center py-4">No flights recorded yet.</p>
       )}
@@ -337,14 +363,20 @@ const FlightLogSection: React.FC<{
             </div>
             
             <div>
-              <label className="text-sm font-semibold text-muted-foreground block mb-1">Elapsed Time:</label>
+              <label className="text-sm font-semibold text-muted-foreground block mb-1">
+                Elapsed Time:
+              </label>
               <input
                 type="text"
                 value={flight.elapsedTime}
                 onChange={(e) => onUpdateFlight(idx, 'elapsedTime', e.target.value)}
                 placeholder="e.g., 00:23:45"
+                aria-describedby={`elapsed-hint-${idx}`}
                 className="w-full px-3 py-2 border border-border rounded focus:ring-2 focus:ring-fuchsia-500 focus:border-fuchsia-500"
               />
+              <p id={`elapsed-hint-${idx}`} className="text-xs text-muted-foreground mt-1">
+                Filled in from launch and landing times. Edit it and your value stays.
+              </p>
             </div>
             
             <div>
@@ -569,7 +601,31 @@ const UASChecklistApp: React.FC = () => {
   const handleUpdateFlight = (index: number, field: keyof FlightRecord, value: string) => {
     setFlightRecords(prev => {
       const updated = [...prev];
-      updated[index] = { ...updated[index], [field]: value };
+      const before = updated[index];
+      const after = { ...before, [field]: value };
+
+      // Auto-compute elapsed time when either clock time changes. A UAS has no
+      // hobbs meter, so the pilot is the only thing counting — doing the
+      // subtraction for them is roadmap item m1.
+      //
+      // We only overwrite an elapsed value that is empty or that still matches
+      // what we computed from the PREVIOUS times, i.e. a value we almost
+      // certainly wrote ourselves. A hand-corrected time survives, because in a
+      // logbook the pilot's entry is the authoritative one.
+      if (field === 'launchTime' || field === 'landingTime') {
+        const nextElapsed = computeElapsed(after.launchTime, after.landingTime);
+        if (
+          nextElapsed &&
+          shouldReplaceElapsed(
+            before.elapsedTime,
+            computeElapsed(before.launchTime, before.landingTime),
+          )
+        ) {
+          after.elapsedTime = nextElapsed;
+        }
+      }
+
+      updated[index] = after;
       return updated;
     });
   };

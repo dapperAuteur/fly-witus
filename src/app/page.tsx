@@ -4,7 +4,7 @@ import React, { Suspense, useState, useEffect, useMemo } from 'react';
 import { Analytics } from "@vercel/analytics/next"
 import Image from 'next/image';
 import Link from 'next/link';
-import { CHECKLIST_SECTIONS, type ChecklistItem } from '@/lib/checklist-data';
+import { buildChecklistSections, type ChecklistItem, type ChecklistSection } from '@/lib/checklist-data';
 import { downloadMissionPdf, type Photo } from '@/lib/pdf';
 import { useSession } from '@/lib/auth-client';
 import { fetchWeatherSnapshot, fetchWeatherForZip, reverseLookupZip, lookupZip, type LatLon, type WeatherSnapshot } from '@/lib/noaa';
@@ -13,6 +13,13 @@ import { PersonalMinimumsPanel } from './_components/personal-minimums-panel';
 import { RiskAssessmentPanel } from './_components/risk-assessment-panel';
 import { evaluateMinimums, loadMinimums, type PersonalMinimums } from '@/lib/personal-minimums';
 import { solarTimes, type SolarTimes } from '@/lib/solar';
+import { ImsafePanel } from './_components/imsafe-panel';
+import {
+  imsafeFromCompleted,
+  imsafeToCompleted,
+  summarizeImsafe,
+  type ImsafeState,
+} from '@/lib/imsafe';
 import {
   flushOutbox,
   getMission,
@@ -32,6 +39,11 @@ interface AircraftProfile {
   name: string;
   type: string;
   certificateNumber: string;
+  // plans/08 Phase 2a. Optional so profiles saved before this existed still
+  // parse out of localStorage; absent means 'uas', which is what every
+  // pre-existing profile is.
+  platform?: 'uas' | 'manned';
+  customChecklist?: string[];
 }
 
 interface MissionLog {
@@ -142,7 +154,10 @@ const exportToJSON = (mission: MissionLog): void => {
   URL.revokeObjectURL(url);
 };
 
-const exportToPDF = async (mission: MissionLog): Promise<void> => {
+const exportToPDF = async (
+  mission: MissionLog,
+  sections?: ChecklistSection[],
+): Promise<void> => {
   // Real PDF via src/lib/pdf.ts. Fixes the iOS Safari "open in print
   // dialog" issue from v3 §0 — jsPDF emits a real PDF blob the browser
   // can download as a file. async because photo embedding fetches
@@ -158,6 +173,7 @@ const exportToPDF = async (mission: MissionLog): Promise<void> => {
     completed: mission.completed,
     flightRecords: mission.flightRecords,
     photos: mission.photos,
+    sections,
   });
 };
 
@@ -440,6 +456,10 @@ const UASChecklistApp: React.FC = () => {
   // the same verdict. Mirrored here and refreshed when the panel saves, so
   // there is still exactly one place that owns the stored value.
   const [minimums, setMinimums] = useState<PersonalMinimums>({ platform: 'uas' });
+  // IMSAFE lives in page state and is folded into the mission's `completed`
+  // map on save — it belongs to one mission and is never queried across them,
+  // so a table for six answers would be a migration for nothing.
+  const [imsafe, setImsafe] = useState<ImsafeState>({});
 
   // Solar times for the launch site. Null until a location is known — the risk
   // assessment reports daylight as "not assessed" rather than assuming a
@@ -496,6 +516,7 @@ const UASChecklistApp: React.FC = () => {
       setSelectedProfileId(m.profileId ?? '');
       setCompleted(m.completed);
       setWeather(m.weather);
+      setImsafe(imsafeFromCompleted(m.completed));
       setFlightRecords(m.flightRecords);
       setPhotos(m.photos ?? []);
       setEditingMissionId(editIdFromUrl);
@@ -516,6 +537,7 @@ const UASChecklistApp: React.FC = () => {
       if (currentMission.profileId) setSelectedProfileId(currentMission.profileId);
       if (currentMission.completed) setCompleted(currentMission.completed);
       if (currentMission.weather) setWeather(currentMission.weather);
+      if (currentMission.completed) setImsafe(imsafeFromCompleted(currentMission.completed));
       if (currentMission.flightRecords) setFlightRecords(currentMission.flightRecords);
       if (currentMission.photos) setPhotos(currentMission.photos);
     }
@@ -573,13 +595,13 @@ const UASChecklistApp: React.FC = () => {
       aircraftType,
       rpCert,
       profileId: selectedProfileId,
-      completed,
+      completed: { ...completed, ...imsafeToCompleted(imsafe) },
       weather,
       flightRecords,
       photos,
     };
     saveCurrentMission(currentMission);
-  }, [pilotName, location, aircraftType, rpCert, selectedProfileId, completed, weather, flightRecords, photos]);
+  }, [pilotName, location, aircraftType, rpCert, selectedProfileId, completed, imsafe, weather, flightRecords, photos]);
 
   // --- HANDLERS ---
   const handleToggle = (itemId: string) => {
@@ -729,6 +751,9 @@ const UASChecklistApp: React.FC = () => {
         flattenedCompleted[`${itemId}_${subId}`] = value;
       });
     });
+    // IMSAFE answers ride along in the same map, under an imsafe_ prefix so
+    // they cannot collide with a checklist item id.
+    Object.assign(flattenedCompleted, imsafeToCompleted(imsafe));
 
     const missionLog: MissionLog = {
       missionNumber,
@@ -797,19 +822,37 @@ const UASChecklistApp: React.FC = () => {
   };
 
   const handleAddProfile = () => {
-    const name = prompt('Aircraft name (e.g., "My Mavic 3"):');
+    const name = prompt('Aircraft name (e.g., "My Mavic 3" or "N12345"):');
     if (!name) return;
-    
-    const type = prompt('Aircraft type (e.g., "DJI Mavic 3"):');
+
+    const type = prompt('Aircraft type (e.g., "DJI Mavic 3" or "Cessna 172S"):');
     if (!type) return;
-    
+
     const cert = prompt('Certificate number (optional):') || '';
-    
+
+    // Which checklist this aircraft gets. Asked as a plain question rather
+    // than inferred from the model string — guessing "172" means an airplane
+    // would be right often and wrong badly.
+    const isManned = confirm(
+      'Is this a manned aircraft you fly from inside?\n\nOK = manned aircraft (uses the manned pre-flight checklist)\nCancel = drone / UAS (uses the Part 107 checklist)',
+    );
+
+    const customRaw = prompt(
+      'Custom checklist items for this aircraft, one per line (optional).\n\nThese are appended to the base checklist.',
+    ) || '';
+    const customChecklist = customRaw
+      .split('\n')
+      .map(line => line.trim())
+      .filter(Boolean)
+      .slice(0, 50);
+
     const newProfile: AircraftProfile = {
       id: Date.now().toString(),
       name,
       type,
       certificateNumber: cert,
+      platform: isManned ? 'manned' : 'uas',
+      customChecklist,
     };
     
     const updatedProfiles = [...aircraftProfiles, newProfile];
@@ -839,16 +882,26 @@ const UASChecklistApp: React.FC = () => {
   const handleExportPDF = async (mission: MissionLog) => {
     setExportingPdf(true);
     try {
-      await exportToPDF(mission);
+      await exportToPDF(mission, activeSections);
     } finally {
       setExportingPdf(false);
     }
   };
 
+  // The checklist itself now depends on which aircraft is selected. A DJI
+  // walk-around is meaningless for a 172 and vice versa, so the base list
+  // switches on the profile's platform and the pilot's own items are appended
+  // (roadmap m4). No profile selected falls back to the drone list, which is
+  // what this product has always been.
+  const activeSections = useMemo(() => {
+    const profile = aircraftProfiles.find(p => p.id === selectedProfileId);
+    return buildChecklistSections(profile?.platform ?? 'uas', profile?.customChecklist ?? []);
+  }, [aircraftProfiles, selectedProfileId]);
+
   // Calculate progress
   const requiredItems = useMemo(() => {
     const items: string[] = [];
-    CHECKLIST_SECTIONS.forEach(section => {
+    activeSections.forEach(section => {
       section.items.forEach(item => {
         if (item.required) {
           items.push(item.id);
@@ -856,7 +909,7 @@ const UASChecklistApp: React.FC = () => {
       });
     });
     return items;
-  }, []);
+  }, [activeSections]);
 
   const completedRequired = useMemo(() => {
     return requiredItems.filter(id => completed[id]).length;
@@ -1091,7 +1144,7 @@ const UASChecklistApp: React.FC = () => {
         </div>
 
         {/* Checklist Sections */}
-        {CHECKLIST_SECTIONS.map((section, idx) => (
+        {activeSections.map((section, idx) => (
           <div key={idx} className="bg-card text-card-foreground rounded-2xl shadow-lg p-6 mb-6 border-t-4 border-gray-400">
             <h2 className="text-2xl font-bold text-card-foreground mb-4">{section.title}</h2>
             <div className="space-y-1">
@@ -1154,9 +1207,12 @@ const UASChecklistApp: React.FC = () => {
         {/* Flight Log */}
         <PersonalMinimumsPanel weather={weather} onChange={setMinimums} />
 
+        <ImsafePanel state={imsafe} onChange={setImsafe} />
+
         <RiskAssessmentPanel
           minimums={evaluateMinimums(minimums, weather)}
           solar={solarView}
+          imsafe={summarizeImsafe(imsafe)}
         />
 
         <FlightLogSection

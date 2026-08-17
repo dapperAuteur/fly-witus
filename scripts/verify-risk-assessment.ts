@@ -14,6 +14,7 @@
 
 import { assessRisk, type RiskInputs } from "../src/lib/risk-assessment";
 import type { MinimumsVerdict } from "../src/lib/personal-minimums";
+import { IMSAFE_ITEMS, summarizeImsafe, type ImsafeState } from "../src/lib/imsafe";
 import { solarTimesForCalendarDate } from "../src/lib/solar";
 
 let failures = 0;
@@ -171,6 +172,60 @@ ok(
   "leading with the delay suggestion",
   stacked.actions[0].includes("delay"),
   stacked.actions[0],
+);
+
+console.log("IMSAFE — an unanswered form is never a clean bill");
+const allClear: ImsafeState = Object.fromEntries(
+  IMSAFE_ITEMS.map((i) => [i.id, "clear" as const]),
+);
+const oneFlagged: ImsafeState = { ...allClear, fatigue: "flagged" };
+const twoFlagged: ImsafeState = { ...oneFlagged, stress: "flagged" };
+const partial: ImsafeState = { illness: "clear", medication: "clear" };
+
+const untouched = assessRisk(base({ imsafe: summarizeImsafe({}) }));
+const untouchedPilot = untouched.factors.find((f) => f.id === "pilot-fitness");
+expect("an untouched IMSAFE is not-assessed", untouchedPilot?.status, "not-assessed");
+ok(
+  "and pilot is still named as an unassessed category",
+  untouched.unassessedCategories.includes("pilot"),
+);
+ok(
+  "and contributes nothing to the denominator",
+  untouchedPilot?.maxPoints === 0,
+  `${untouchedPilot?.maxPoints}`,
+);
+
+const partialRun = assessRisk(base({ imsafe: summarizeImsafe(partial) }));
+expect(
+  "a partly-filled IMSAFE is a caution, not a pass",
+  partialRun.factors.find((f) => f.id === "pilot-fitness")?.status,
+  "caution",
+);
+ok(
+  "and pilot is no longer listed as wholly unassessed",
+  !partialRun.unassessedCategories.includes("pilot"),
+);
+
+const clearRun = assessRisk(base({ imsafe: summarizeImsafe(allClear) }));
+expect(
+  "a complete IMSAFE with nothing flagged is ok",
+  clearRun.factors.find((f) => f.id === "pilot-fitness")?.status,
+  "ok",
+);
+expect("and scores nothing", clearRun.score, 0);
+
+const oneRun = assessRisk(base({ imsafe: summarizeImsafe(oneFlagged) }));
+expect("one flagged item elevates the band", oneRun.band, "elevated");
+ok(
+  "and names what was flagged",
+  oneRun.actions.some((a) => a.toLowerCase().includes("fatigue")),
+);
+
+const twoRun = assessRisk(base({ imsafe: summarizeImsafe(twoFlagged) }));
+ok(
+  "two flagged items score higher than one",
+  twoRun.score > oneRun.score,
+  `${twoRun.score} vs ${oneRun.score}`,
 );
 
 console.log("polar cases do not break the assessment");

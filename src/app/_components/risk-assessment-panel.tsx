@@ -8,6 +8,7 @@ import {
   type FactorStatus,
 } from "@/lib/risk-assessment";
 import type { MinimumsVerdict } from "@/lib/personal-minimums";
+import type { ImsafeSummary } from "@/lib/imsafe";
 import { formatSolarTime, type SolarTimes } from "@/lib/solar";
 
 // Pre-flight risk assessment panel (roadmap p4).
@@ -52,7 +53,8 @@ const FACTOR_TEXT: Record<FactorStatus, string> = {
 export const RiskAssessmentPanel: React.FC<{
   minimums: MinimumsVerdict;
   solar: SolarTimes | null;
-}> = ({ minimums, solar }) => {
+  imsafe?: ImsafeSummary;
+}> = ({ minimums, solar, imsafe }) => {
   const [plannedDuration, setPlannedDuration] = useState("");
   const [externalPressure, setExternalPressure] = useState(false);
   const [unfamiliarSite, setUnfamiliarSite] = useState(false);
@@ -70,8 +72,9 @@ export const RiskAssessmentPanel: React.FC<{
         plannedDurationMinutes: parsedDuration,
         externalPressure,
         unfamiliarSite,
+        imsafe,
       }),
-    [minimums, solar, parsedDuration, externalPressure, unfamiliarSite],
+    [minimums, solar, parsedDuration, externalPressure, unfamiliarSite, imsafe],
   );
 
   const bandStyle = BAND_STYLES[assessment.band];
@@ -209,8 +212,8 @@ export const RiskAssessmentPanel: React.FC<{
 
       <p className="text-xs text-muted-foreground mt-4 pt-3 border-t border-border">
         Advisory only. This is a structured prompt to think, not a clearance, an
-        authorisation, or a legal determination — and it does not cover pilot fitness or
-        aircraft condition. The decision to fly is yours.
+        authorisation, or a legal determination. Anything marked &ldquo;not assessed&rdquo;
+        above is not included in the score. The decision to fly is yours.
       </p>
     </div>
   );

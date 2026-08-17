@@ -31,7 +31,7 @@ const ROADMAP_FEATURES: Feature[] = [
   { id: 'm1', title: 'Flight Time Calculator', description: 'Elapsed time fills in from launch and landing times, including flights crossing midnight, and the mission totals every flight. Edit any value and yours is kept.', priority: 'medium', status: 'completed', quarter: 'Q2 2026' },
   { id: 'm2', title: 'Battery Health Log', description: 'Per-flight and per-battery voltage is captured today; trend analysis and degradation flagging are still to come.', priority: 'medium', status: 'in-progress', quarter: 'Q2 2026' },
   { id: 'm3', title: 'Emergency Contacts', description: 'Quick-access list for ATC, local authorities, insurance. One-tap call with GPS location share.', priority: 'medium', status: 'planned', quarter: 'Q2 2026' },
-  { id: 'm4', title: 'Custom Checklist Items', description: 'Add site-specific or client-specific items. Support per-profile custom checklists.', priority: 'medium', status: 'planned', quarter: 'Q2 2026' },
+  { id: 'm4', title: 'Custom Checklist Items', description: 'Add your own items to any aircraft profile — they append to that aircraft\u2019s checklist and travel into the PDF.', priority: 'medium', status: 'completed', quarter: 'Q2 2026' },
   { id: 'm5', title: 'Multi-Language Support', description: 'Spanish and French translations with auto-detect browser language.', priority: 'medium', status: 'planned', quarter: 'Q2 2026' },
 
   // Nice to Have - Q3-Q4 2026
@@ -43,9 +43,10 @@ const ROADMAP_FEATURES: Feature[] = [
 
   // Pilot module — see plans/08. Personal minimums and the solar engine serve
   // Part 107 operators too; the manned-aviation items build on top of them.
+  { id: 'a0', title: 'Manned Aircraft Profiles', description: 'Mark an aircraft profile as a manned aircraft and it gets a manned pre-flight checklist instead of the drone one. Your POH/AFM checklist stays authoritative \u2014 this covers what happens before it.', priority: 'high', status: 'completed', quarter: 'Q3 2026' },
   { id: 'a1', title: 'Personal Minimums', description: 'Set your own limits for wind, gust, crosswind, and cloud cover. Every pre-flight checks the forecast against them. A limit the forecast cannot report is shown as unchecked, never as passing.', priority: 'high', status: 'completed', quarter: 'Q3 2026' },
-  { id: 'a2', title: 'IMSAFE Self-Assessment', description: 'The pilot-fitness checklist — Illness, Medication, Stress, Alcohol, Fatigue, Emotion — recorded with the flight and fed into the risk score.', priority: 'medium', status: 'planned', quarter: 'Q4 2026' },
-  { id: 'a3', title: 'Documents Locker', description: 'Track pilot credentials and aircraft documents with expiry reminders. Covers Part 107 and manned-aviation operators flying both.', priority: 'medium', status: 'planned', quarter: 'Q4 2026' },
+  { id: 'a2', title: 'IMSAFE Self-Assessment', description: 'The pilot-fitness check \u2014 Illness, Medication, Stress, Alcohol, Fatigue, Emotion \u2014 recorded with the flight and fed into the risk score. An unanswered IMSAFE counts as not assessed, never as a pass.', priority: 'medium', status: 'completed', quarter: 'Q3 2026' },
+  { id: 'a3', title: 'Documents Locker', description: 'Track pilot credentials and aircraft documents with expiry reminders. A reminder tool, not a compliance check \u2014 in limited release while a pilot reviews it.', priority: 'medium', status: 'in-progress', quarter: 'Q4 2026' },
 ];
 
 const RoadmapComponent: React.FC = () => {

@@ -13,6 +13,10 @@ Pre-flight checklist + flight log for Part 107 drone operators. Offline-first PW
 - **PDF export** — jsPDF, FAA-rubric-ready, no print dialog (works in iOS Safari)
 - **Offline-first** — service worker + IndexedDB outbox; flush on reconnect
 - **Live weather** — NOAA gridpoint forecast, ZIP→lat/lon via free Census geocoder
+- **Personal minimums** — set your own wind, gust, crosswind, and cloud-cover limits; every pre-flight checks the forecast against them. A limit the forecast can't report shows as *unchecked*, never as passing.
+- **Pre-flight risk assessment** — PAVE-structured score (Pilot, Aircraft, enVironment, External pressures) with the reason for every flagged factor and a recommended action. Advisory only.
+- **Sunrise / sunset / civil twilight** — computed on-device from your launch location, no network needed; feeds the daylight-margin check
+- **Flight time** — elapsed time fills in from launch/landing (midnight crossings handled), mission totals every flight
 - **Photo attachments** — Cloudinary unsigned upload, embedded in PDF
 - **Aircraft profiles** — per-pilot inventory, quick-load on new mission
 - **Magic-link auth** — no passwords, no OAuth (Better Auth + Mailgun)
@@ -162,6 +166,7 @@ src/
 │   │   └── cron/                 # cashapp-reminder + meetup-reminders
 │   ├── dashboard/                # user dashboard (incl. Account section)
 │   ├── groups/                   # group list/create/dashboard (+ meetups tab)
+│   ├── _components/              # photo upload, personal-minimums panel, risk-assessment panel
 │   ├── help/                     # searchable help center (/help + /help/[slug])
 │   ├── join/[inviteCode]/        # invite landing
 │   ├── pricing/                  # /pricing
@@ -186,7 +191,11 @@ src/
     ├── stripe.ts                 # Stripe client + slot counter helpers
     ├── promos.ts                 # Stripe coupon + promotion-code sync
     ├── pdf.ts                    # jsPDF mission export
-    ├── noaa.ts                   # NOAA + Census ZIP fallback
+    ├── noaa.ts                   # NOAA + Census ZIP fallback (+ structured wind in knots)
+    ├── solar.ts                  # sunrise/sunset/civil twilight — local math, no API
+    ├── flight-time.ts            # elapsed-time arithmetic + mission totals
+    ├── personal-minimums.ts      # pilot-set limits + crosswind components
+    ├── risk-assessment.ts        # PAVE-structured pre-flight risk score
     ├── offline-outbox.ts         # IDB outbox for offline writes
     ├── checklist-data.ts
     ├── missions-store.ts         # auth-aware read/write
@@ -231,6 +240,22 @@ bytes. `/api/health` runs a real `select 1` against the database on every reques
 ## Verification before launch
 
 See [docs/launch/smoke-checklist.md](docs/launch/smoke-checklist.md) for the end-to-end pre-launch verification.
+
+### Verification scripts
+
+The safety-adjacent calculations carry their own harnesses. There is no test framework in this repo; these follow the existing `scripts/*.ts` + `tsx` pattern (as `check:scrub` does) and run standalone.
+
+```bash
+npm run verify:solar        # sunrise/sunset/twilight — 409 invariant checks, plus a table to cross-check
+npm run verify:flight-time  # elapsed-time arithmetic, midnight crossings, the override rule
+npm run verify:minimums     # crosswind trigonometry, classification bands, unknown-is-never-within
+npm run verify:risk         # PAVE scoring, no-averaging rule, unassessed categories
+npm run verify:weather      # LIVE — sweeps 7 NWS gridpoints and prints structured-field coverage
+```
+
+`verify:weather` hits the live National Weather Service API and needs network. The rest are offline and deterministic.
+
+`verify:solar` asserts invariants (internal symmetry, monotonicity with latitude, polar cases) rather than hardcoded almanac times, because writing expected sunset times from memory would be a guess dressed as a test. It prints a table of computed times for a human to cross-check against [USNO](https://aa.usno.navy.mil/data/RS_OneDay) — **that cross-check is a real step, not decoration.**
 
 ## Contributing
 

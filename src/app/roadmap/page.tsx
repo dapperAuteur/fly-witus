@@ -24,11 +24,11 @@ const ROADMAP_FEATURES: Feature[] = [
   { id: 'p1', title: 'Digital Signature Capture', description: 'Canvas-based signature pad for legal compliance. Auto-embed in PDF exports with timestamp.', priority: 'high', status: 'planned', quarter: 'Q1 2026' },
   { id: 'p2', title: 'Photo Attachments', description: 'Attach photos to a mission via Cloudinary to document equipment condition, weather, and site hazards. Embedded in the PDF export.', priority: 'high', status: 'completed', quarter: 'Q1 2026' },
   { id: 'p3', title: 'Offline Map Integration', description: 'Embedded map showing no-fly zones, airports, and restricted areas within 5-mile radius. Works offline.', priority: 'high', status: 'planned', quarter: 'Q1 2026' },
-  { id: 'p4', title: 'Pre-Flight Risk Assessment', description: 'Weighted go/no-go score from weather versus your personal minimums, daylight margin, airspace, and external pressure. Advisory only — the PIC decides.', priority: 'high', status: 'in-progress', quarter: 'Q1 2026' },
+  { id: 'p4', title: 'Pre-Flight Risk Assessment', description: 'Risk score grouped by PAVE — weather versus your personal minimums, daylight margin, site familiarity, and schedule pressure. Says what drove the score and what to do about it. Pilot fitness and aircraft condition are not yet included, and it says so. Advisory only.', priority: 'high', status: 'completed', quarter: 'Q1 2026' },
   { id: 'p5', title: 'Maintenance Tracker', description: 'Flight hour counter with automated alerts for scheduled maintenance intervals.', priority: 'high', status: 'planned', quarter: 'Q1 2026' },
 
   // Medium Priority - Q2 2026
-  { id: 'm1', title: 'Flight Time Calculator', description: 'Times are captured per flight today; auto-compute of elapsed time from launch and landing is in progress.', priority: 'medium', status: 'in-progress', quarter: 'Q2 2026' },
+  { id: 'm1', title: 'Flight Time Calculator', description: 'Elapsed time fills in from launch and landing times, including flights crossing midnight, and the mission totals every flight. Edit any value and yours is kept.', priority: 'medium', status: 'completed', quarter: 'Q2 2026' },
   { id: 'm2', title: 'Battery Health Log', description: 'Per-flight and per-battery voltage is captured today; trend analysis and degradation flagging are still to come.', priority: 'medium', status: 'in-progress', quarter: 'Q2 2026' },
   { id: 'm3', title: 'Emergency Contacts', description: 'Quick-access list for ATC, local authorities, insurance. One-tap call with GPS location share.', priority: 'medium', status: 'planned', quarter: 'Q2 2026' },
   { id: 'm4', title: 'Custom Checklist Items', description: 'Add site-specific or client-specific items. Support per-profile custom checklists.', priority: 'medium', status: 'planned', quarter: 'Q2 2026' },
@@ -36,14 +36,14 @@ const ROADMAP_FEATURES: Feature[] = [
 
   // Nice to Have - Q3-Q4 2026
   { id: 'n1', title: 'Voice Notes', description: 'Record verbal observations during walk-around. Auto-transcribe to text and attach to items.', priority: 'low', status: 'planned', quarter: 'Q3 2026' },
-  { id: 'n2', title: 'Sunset/Sunrise Calculator', description: 'Sunrise, sunset, and civil twilight computed from your launch location. Warns when a flight runs past legal daylight.', priority: 'low', status: 'in-progress', quarter: 'Q3 2026' },
-  { id: 'n3', title: 'Wind Speed Alerts', description: 'Folded into Personal Minimums — forecast wind, gust, and crosswind checked against the limits you set.', priority: 'low', status: 'in-progress', quarter: 'Q3 2026' },
+  { id: 'n2', title: 'Sunset/Sunrise Calculator', description: 'Sunrise, sunset, and civil twilight computed on-device from your launch location — no network needed. Feeds the daylight margin in the risk assessment.', priority: 'low', status: 'completed', quarter: 'Q3 2026' },
+  { id: 'n3', title: 'Wind Speed Alerts', description: 'Shipped as part of Personal Minimums — forecast wind, gust, and crosswind component checked against the limits you set, not against a manufacturer spec.', priority: 'low', status: 'completed', quarter: 'Q3 2026' },
   { id: 'n4', title: 'Batch Export to Excel', description: 'Export all missions as CSV/XLSX with pivot tables for analysis. (A full JSON export of your data already ships under Dashboard → Account.)', priority: 'low', status: 'planned', quarter: 'Q4 2026' },
   { id: 'n5', title: 'Cloud Sync (Premium)', description: 'Signed-in missions sync to our Postgres database across every device on a paid plan, with an offline outbox that flushes on reconnect.', priority: 'low', status: 'completed', quarter: 'Q4 2026' },
 
   // Pilot module — see plans/08. Personal minimums and the solar engine serve
   // Part 107 operators too; the manned-aviation items build on top of them.
-  { id: 'a1', title: 'Personal Minimums', description: 'Set your own limits for wind, gust, crosswind, ceiling, and visibility. Every pre-flight checks the forecast against them and flags what is outside your comfort.', priority: 'high', status: 'in-progress', quarter: 'Q3 2026' },
+  { id: 'a1', title: 'Personal Minimums', description: 'Set your own limits for wind, gust, crosswind, and cloud cover. Every pre-flight checks the forecast against them. A limit the forecast cannot report is shown as unchecked, never as passing.', priority: 'high', status: 'completed', quarter: 'Q3 2026' },
   { id: 'a2', title: 'IMSAFE Self-Assessment', description: 'The pilot-fitness checklist — Illness, Medication, Stress, Alcohol, Fatigue, Emotion — recorded with the flight and fed into the risk score.', priority: 'medium', status: 'planned', quarter: 'Q4 2026' },
   { id: 'a3', title: 'Documents Locker', description: 'Track pilot credentials and aircraft documents with expiry reminders. Covers Part 107 and manned-aviation operators flying both.', priority: 'medium', status: 'planned', quarter: 'Q4 2026' },
 ];

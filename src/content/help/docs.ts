@@ -469,6 +469,138 @@ export const HELP_DOCS: HelpDoc[] = [
       },
     ],
   },
+  {
+    slug: "manned-aircraft-and-custom-checklists",
+    title: "Manned aircraft and custom checklists",
+    category: "Missions & flights",
+    summary:
+      "Mark an aircraft profile as manned to get a manned pre-flight checklist, and add your own items to any aircraft.",
+    keywords: [
+      "manned",
+      "airplane",
+      "aircraft",
+      "cessna",
+      "checklist",
+      "custom",
+      "POH",
+      "AFM",
+      "profile",
+      "platform",
+    ],
+    body: [
+      { kind: "heading", text: "Two kinds of aircraft, two checklists" },
+      {
+        kind: "paragraph",
+        text: "When you create an aircraft profile you are asked whether it is a manned aircraft you fly from inside, or a drone. Pick manned and that profile gets a manned pre-flight checklist instead of the Part 107 one. Select the profile on a mission and the checklist changes to match. A drone walk-around is meaningless for a Cessna, and the reverse.",
+      },
+      { kind: "heading", text: "Your POH or AFM is the real checklist" },
+      {
+        kind: "paragraph",
+        text: "For any specific aircraft, the manufacturer checklist is the correct one. It is aircraft-specific, it is what you were trained on, and nothing generic can replace it. Our manned list does not try to. It covers the part that happens before the airplane checklist starts and that the POH does not address, because it is not about the airplane: documents, weather against your personal minimums, daylight, and the go/no-go decision.",
+      },
+      {
+        kind: "paragraph",
+        text: "That is why the wording says things like 'walk-around flown to the POH/AFM sequence' rather than telling you what to check. We are not going to tell you how to fly your aircraft.",
+      },
+      { kind: "heading", text: "Custom checklist items" },
+      {
+        kind: "steps",
+        items: [
+          "When you create an aircraft profile, you are offered a box for custom items.",
+          "Enter one item per line — up to 50.",
+          "They appear as a 'Your Items' section at the end of that aircraft's checklist.",
+          "They are included in the PDF export like any other item.",
+        ],
+      },
+      {
+        kind: "paragraph",
+        text: "This is where aircraft-specific and client-specific content belongs. If your airframe has a quirk, or a particular client always wants the same three shots, put it here rather than trying to remember it.",
+      },
+    ],
+  },
+  {
+    slug: "imsafe",
+    title: "IMSAFE — the pilot fitness check",
+    category: "Missions & flights",
+    summary:
+      "Six questions about you rather than the aircraft, recorded with your flight and fed into the risk assessment.",
+    keywords: [
+      "IMSAFE",
+      "fitness",
+      "illness",
+      "medication",
+      "stress",
+      "alcohol",
+      "fatigue",
+      "emotion",
+      "self assessment",
+      "human factors",
+    ],
+    body: [
+      {
+        kind: "paragraph",
+        text: "IMSAFE is the check most pilots run in their head before a flight: Illness, Medication, Stress, Alcohol, Fatigue, Emotion. Answering it here means it is recorded with the flight — and, more usefully, it means you notice the day you skipped it. That day tends to correlate with the day you should not have.",
+      },
+      { kind: "heading", text: "Nothing is answered for you" },
+      {
+        kind: "paragraph",
+        text: "Every item starts blank. There is no pre-ticked 'I'm fine' to scroll past, because an answer you did not give should never be counted as a considered one. The risk assessment reads an untouched IMSAFE as not assessed rather than as a pass, and a partly-filled one tells you which questions are still blank.",
+      },
+      { kind: "heading", text: "Flagging something is not failing" },
+      {
+        kind: "paragraph",
+        text: "If you mark an item as a concern, you have done the difficult part, which is noticing. What you do next is your decision. The tool records the answer and raises it in the risk assessment; it does not stop you doing anything.",
+      },
+      {
+        kind: "paragraph",
+        text: "This is a self-assessment. It is not medical advice and it is not a determination that you are fit to fly. You are the only person who can answer these questions.",
+      },
+    ],
+  },
+  {
+    slug: "documents-locker",
+    title: "Documents locker",
+    category: "Account",
+    summary:
+      "Track pilot credentials and aircraft documents with expiry reminders. A reminder tool, not a compliance check.",
+    keywords: [
+      "documents",
+      "expiry",
+      "medical",
+      "BasicMed",
+      "certificate",
+      "registration",
+      "airworthiness",
+      "ARROW",
+      "reminders",
+    ],
+    body: [
+      {
+        kind: "paragraph",
+        text: "The documents locker tracks two separate things: credentials that belong to you as a pilot, and documents that belong to a particular aircraft. Enter what you hold and when it expires, and it tells you what is lapsing next.",
+      },
+      { kind: "heading", text: "What it is not" },
+      {
+        kind: "paragraph",
+        text: "It is a reminder tool. It does not decide which documents your operation requires, and a full list here does not mean a legal flight. Requirements vary by operation, by aircraft, and by the certificate you are exercising. Check the current regulations for what applies to you.",
+      },
+      { kind: "heading", text: "Medical eligibility" },
+      {
+        kind: "paragraph",
+        text: "There are several routes to medical eligibility and they run different clocks, so they are tracked separately rather than as one 'medical' entry. BasicMed in particular has two independent dates — the physical exam and the online course — which are easy to conflate. Track the route you actually use.",
+      },
+      { kind: "heading", text: "On board is not the same as having one" },
+      {
+        kind: "paragraph",
+        text: "Several aircraft documents have to physically be in the aircraft. A current document sitting on your desk at home is not, so each aircraft document has a separate 'in the aircraft' tick alongside its expiry.",
+      },
+      { kind: "heading", text: "Blank dates" },
+      {
+        kind: "paragraph",
+        text: "If you leave an expiry blank, that document shows as 'not tracked' — never as current. We will not show you a green tick for a date you have not given us.",
+      },
+    ],
+  },
 ];
 
 export function getHelpDoc(slug: string): HelpDoc | undefined {

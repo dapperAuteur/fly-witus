@@ -18,7 +18,10 @@ Pre-flight checklist + flight log for Part 107 drone operators. Offline-first PW
 - **Sunrise / sunset / civil twilight** — computed on-device from your launch location, no network needed; feeds the daylight-margin check
 - **Flight time** — elapsed time fills in from launch/landing (midnight crossings handled), mission totals every flight
 - **Photo attachments** — Cloudinary unsigned upload, embedded in PDF
-- **Aircraft profiles** — per-pilot inventory, quick-load on new mission
+- **Aircraft profiles** — per-pilot inventory, quick-load on new mission. Mark a profile as a **manned aircraft** and it gets a manned pre-flight checklist instead of the drone one; your POH/AFM checklist stays authoritative.
+- **Custom checklist items** — add your own items to any aircraft profile; they append to that aircraft's checklist and travel into the PDF
+- **IMSAFE** — the pilot-fitness check, recorded with the flight and fed into the risk score. An unanswered IMSAFE counts as *not assessed*, never as a pass.
+- **Documents locker** *(feature-flagged)* — pilot credentials and aircraft documents with expiry reminders. A reminder tool, **not** a compliance check.
 - **Magic-link auth** — no passwords, no OAuth (Better Auth + Mailgun)
 - **Cloud sync** — signed-in missions persist to Postgres (Neon)
 - **Account self-service** — change email (verified), export your data (JSON), sign out everywhere, delete account — all from **Dashboard → Account**
@@ -79,6 +82,8 @@ npm run db:migrate                 # apply Drizzle migrations
 npm run dev                        # http://localhost:3000
 ```
 
+**Feature flags:** `NEXT_PUBLIC_FEATURE_DOCUMENTS_LOCKER` must be exactly `true` to expose `/documents`. Unset, the route 404s. It stays off until a qualified pilot/CFI has reviewed the rule logic — the locker asserts which documents an operation involves, and that is not something to ship on our own reading of the regulations.
+
 Required env: `DATABASE_URL`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `ADMIN_EMAIL`. Stripe / Mailgun / Cloudinary / CashApp env are optional for local dev — features they back surface a friendly fallback when their env is absent.
 
 ### Error monitoring (Better Stack)
@@ -106,6 +111,10 @@ Tracing and session replay are set to a 0 sample rate (errors only). Env vars li
 | DELETE | `/api/account/sessions` | Sign out everywhere |
 | DELETE | `/api/account` | Delete account + cloud data (typed confirm) |
 | GET / POST | `/api/aircraft-profiles` | List / create aircraft |
+| GET / POST | `/api/documents/credentials` | List / add pilot credentials *(flagged)* |
+| PATCH / DELETE | `/api/documents/credentials/[id]` | Edit / remove |
+| GET / POST | `/api/documents/aircraft` | List / add aircraft documents *(flagged)* |
+| PATCH / DELETE | `/api/documents/aircraft/[id]` | Edit / remove |
 | PATCH / DELETE | `/api/aircraft-profiles/[id]` | Edit / remove |
 | GET / POST | `/api/groups` *(paid)* | List user's groups / create |
 | GET / PATCH / DELETE | `/api/groups/[id]` *(member)* | Dashboard payload / owner edit / delete |
@@ -165,6 +174,7 @@ src/
 │   │   ├── health/               # public uptime check (real DB probe, never cached)
 │   │   └── cron/                 # cashapp-reminder + meetup-reminders
 │   ├── dashboard/                # user dashboard (incl. Account section)
+│   ├── documents/                # documents locker (feature-flagged; 404s when off)
 │   ├── groups/                   # group list/create/dashboard (+ meetups tab)
 │   ├── _components/              # photo upload, personal-minimums panel, risk-assessment panel
 │   ├── help/                     # searchable help center (/help + /help/[slug])
@@ -179,7 +189,7 @@ src/
 ├── content/help/                 # help-doc source (typed, fuzzy-searchable)
 ├── db/
 │   ├── client.ts                 # pg pool + drizzle
-│   ├── schema/                   # auth, missions, commerce, groups, aircraft-profiles, feedback, meetups
+│   ├── schema/                   # auth, missions, commerce, groups, aircraft-profiles, feedback, meetups, documents
 │   └── migrations/
 └── lib/
     ├── env.ts                    # zod-validated env
@@ -196,6 +206,8 @@ src/
     ├── flight-time.ts            # elapsed-time arithmetic + mission totals
     ├── personal-minimums.ts      # pilot-set limits + crosswind components
     ├── risk-assessment.ts        # PAVE-structured pre-flight risk score
+    ├── imsafe.ts                 # IMSAFE items + mission-record round-trip
+    ├── documents-api.ts          # documents-locker validation + expiry classification
     ├── offline-outbox.ts         # IDB outbox for offline writes
     ├── checklist-data.ts
     ├── missions-store.ts         # auth-aware read/write
@@ -250,6 +262,7 @@ npm run verify:solar        # sunrise/sunset/twilight — 409 invariant checks, 
 npm run verify:flight-time  # elapsed-time arithmetic, midnight crossings, the override rule
 npm run verify:minimums     # crosswind trigonometry, classification bands, unknown-is-never-within
 npm run verify:risk         # PAVE scoring, no-averaging rule, unassessed categories
+npm run verify:documents    # expiry date boundaries, warning window, input validation
 npm run verify:weather      # LIVE — sweeps 7 NWS gridpoints and prints structured-field coverage
 ```
 

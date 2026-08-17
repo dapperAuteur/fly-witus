@@ -7,7 +7,8 @@ import Link from 'next/link';
 import { CHECKLIST_SECTIONS, type ChecklistItem } from '@/lib/checklist-data';
 import { downloadMissionPdf, type Photo } from '@/lib/pdf';
 import { useSession } from '@/lib/auth-client';
-import { fetchWeatherSnapshot, fetchWeatherForZip, reverseLookupZip } from '@/lib/noaa';
+import { fetchWeatherSnapshot, fetchWeatherForZip, reverseLookupZip, type WeatherSnapshot } from '@/lib/noaa';
+import { PersonalMinimumsPanel } from './_components/personal-minimums-panel';
 import {
   flushOutbox,
   getMission,
@@ -392,7 +393,11 @@ const UASChecklistApp: React.FC = () => {
   
   const [completed, setCompleted] = useState<{ [key: string]: boolean | string }>({});
   const [subValues, setSubValues] = useState<{ [key: string]: { [subId: string]: string } }>({});
-  const [weather, setWeather] = useState<{ temperature?: string; wind?: string; precipitation?: string }>({});
+  // Partial<WeatherSnapshot> rather than the three display strings: a NOAA
+  // fetch also carries structured wind values, and the personal-minimums check
+  // needs them. Partial because a pilot can also type the display fields in by
+  // hand, in which case the numbers are simply absent.
+  const [weather, setWeather] = useState<Partial<WeatherSnapshot>>({});
   const [flightRecords, setFlightRecords] = useState<FlightRecord[]>([]);
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [exportingPdf, setExportingPdf] = useState<boolean>(false);
@@ -1061,6 +1066,8 @@ const UASChecklistApp: React.FC = () => {
         </div>
 
         {/* Flight Log */}
+        <PersonalMinimumsPanel weather={weather} />
+
         <FlightLogSection
           flightRecords={flightRecords}
           onAddFlight={handleAddFlight}

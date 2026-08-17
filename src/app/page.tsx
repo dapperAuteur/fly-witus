@@ -27,7 +27,6 @@ interface AircraftProfile {
   name: string;
   type: string;
   certificateNumber: string;
-  customChecklist?: string[];
 }
 
 interface MissionLog {

@@ -48,6 +48,18 @@ const schema = z.object({
   CLOUDINARY_API_SECRET: z.string().optional(),
   NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET: z.string().optional(),
 
+  // Shared-ecosystem PostHog project (gemini/witus plans/26). Optional on purpose:
+  // keyless is a supported state — local dev, previews, and any deploy before the var
+  // is set render normally with capture simply off. The `phc_` project key is
+  // publishable and ships in the browser bundle; a `phx_` personal API key is a real
+  // secret and must never be used here.
+  //
+  // There is deliberately no NEXT_PUBLIC_POSTHOG_HOST: the browser talks to "/ingest"
+  // on this origin and next.config.ts owns the upstream host, so a US key can't be
+  // pointed at the EU cluster by an env typo (which fails silently — no error, no
+  // events).
+  NEXT_PUBLIC_POSTHOG_KEY: z.string().optional(),
+
   CRON_SECRET: z.string().optional(),
 
   // WitUS Inbox push (witus-inbox repo). When set, admin alerts also
@@ -111,6 +123,8 @@ const input = {
   CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET,
   NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET: process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET,
 
+  NEXT_PUBLIC_POSTHOG_KEY: process.env.NEXT_PUBLIC_POSTHOG_KEY,
+
   CRON_SECRET: process.env.CRON_SECRET,
 
   INBOX_INGEST_URL: process.env.INBOX_INGEST_URL,
@@ -144,6 +158,8 @@ export const hasCloudinary = Boolean(
   env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME && env.CLOUDINARY_API_KEY && env.CLOUDINARY_API_SECRET,
 );
 export const hasCron = Boolean(env.CRON_SECRET);
+/** True once the shared PostHog project key is provisioned. Capture is off until then. */
+export const hasPostHog = Boolean(env.NEXT_PUBLIC_POSTHOG_KEY);
 export const hasInbox = Boolean(
   env.INBOX_INGEST_URL && env.INBOX_INGEST_SECRET && env.INBOX_SOURCE_SLUG,
 );

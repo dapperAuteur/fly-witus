@@ -14,7 +14,41 @@ const withSerwist = withSerwistInit({
 });
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // PostHog's ingest endpoints use trailing slashes (/e/, /flags/, /s/). Without this,
+  // Next issues a 308 to the slashless form before the rewrite runs and ingest breaks.
+  // Required by PostHog's documented Next.js proxy setup.
+  //
+  // SIDE EFFECT worth knowing: this disables Next's automatic trailing-slash redirect
+  // for EVERY route, not just /ingest, so /pricing/ no longer 308s to /pricing and both
+  // forms become reachable. Nothing in this app links to the trailing-slash form and
+  // Next never generates one, so the exposure is limited to an external link or a typo.
+  // The durable fix is per-page `alternates.canonical` metadata, which this app does not
+  // set anywhere yet; worth adding before any SEO push.
+  skipTrailingSlashRedirect: true,
+
+  async rewrites() {
+    // Reverse-proxy PostHog through our own origin. us.i.posthog.com is on uBlock
+    // Origin, Brave Shields, and Safari's tracker list, so a meaningful share of
+    // events never leave the browser — including, reliably, our own test visits.
+    // Routing ingest through fly.witus.online leaves blockers nothing to match on.
+    //
+    // Assets come from a different upstream host than ingest, hence two rules. The
+    // more specific /static rule must come first.
+    //
+    // The shared ecosystem project is US. A US key pointed at the EU cluster fails
+    // SILENTLY — no error, no events — so these hosts are pinned here rather than read
+    // from env, where a typo would be invisible until someone noticed the data missing.
+    return [
+      {
+        source: "/ingest/static/:path*",
+        destination: "https://us-assets.i.posthog.com/static/:path*",
+      },
+      {
+        source: "/ingest/:path*",
+        destination: "https://us.i.posthog.com/:path*",
+      },
+    ];
+  },
 };
 
 // Sentry's build plugin wraps the serwist-wrapped config (outermost, so it sees the final

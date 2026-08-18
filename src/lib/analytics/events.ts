@@ -20,7 +20,7 @@
  */
 
 /** Slug carried on every event so this app's data stays separable in the shared project. */
-export const ANALYTICS_APP = "fly-witus";
+export const ANALYTICS_APP = "fly";
 
 /**
  * Events with identical names across every ecosystem app. Names are contractual.

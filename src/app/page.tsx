@@ -1,7 +1,6 @@
 "use client"
 
 import React, { Suspense, useState, useEffect, useMemo } from 'react';
-import { Analytics } from "@vercel/analytics/next"
 import Image from 'next/image';
 import Link from 'next/link';
 import { buildChecklistSections, type ChecklistItem, type ChecklistSection } from '@/lib/checklist-data';
@@ -967,7 +966,6 @@ const UASChecklistApp: React.FC = () => {
 
         {/* Header */}
         <header className="mb-8 text-center">
-          <Analytics />
           <div className="flex items-center justify-center gap-4 mb-4">
             <Image
               width={80}

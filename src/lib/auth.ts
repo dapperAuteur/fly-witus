@@ -6,7 +6,7 @@ import { genericOAuth } from "better-auth/plugins";
 import { eq } from "drizzle-orm";
 import { db, schema } from "@/db/client";
 import { users } from "@/db/schema/auth";
-import { env } from "./env";
+import { WITUS_OIDC_DISCOVERY_FALLBACK, env } from "./env";
 import { sendMagicLinkEmail } from "./mailer";
 
 export const auth = betterAuth({
@@ -63,9 +63,9 @@ export const auth = betterAuth({
             config: [
               {
                 providerId: "witus",
-                discoveryUrl:
-                  env.WITUS_OIDC_DISCOVERY_URL ??
-                  "https://accounts.witus.online/api/idp/.well-known/openid-configuration",
+                // The fallback lives in src/lib/env.ts so this file and the silent
+                // "Continue as …" probe cannot drift onto different hosts.
+                discoveryUrl: env.WITUS_OIDC_DISCOVERY_URL ?? WITUS_OIDC_DISCOVERY_FALLBACK,
                 clientId: env.WITUS_OIDC_CLIENT_ID,
                 clientSecret: env.WITUS_OIDC_CLIENT_SECRET ?? "",
                 scopes: ["openid", "email", "profile"],

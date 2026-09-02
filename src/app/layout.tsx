@@ -7,6 +7,8 @@ import { AppNav } from "@/components/app-nav";
 import { HelpBubble } from "@/components/help-bubble";
 import { SiteFooter } from "@/components/site-footer";
 import { PostHogProvider } from "@/lib/analytics/posthog-provider";
+import { witusEndSessionEndpoint } from "@/lib/env";
+import { WitusEcosystemProvider } from "@/lib/witus-ecosystem";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -62,10 +64,17 @@ export default function RootLayout({
           apiKey={process.env.NEXT_PUBLIC_POSTHOG_KEY ?? null}
           apiHost="/ingest"
         />
-        <AppNav />
-        {children}
-        <SiteFooter />
-        <HelpBubble />
+        {/* Global sign-out (BAM, 2026-08-30: signing out of one WitUS app signs you out of
+            all of them). The end-session URL is resolved HERE, in the Server Component, because
+            it carries the OIDC client_id and a client component must never read the raw env.
+            `null` — no ecosystem OIDC client configured — is the supported state that leaves
+            every sign-out button purely local. */}
+        <WitusEcosystemProvider endSessionUrl={witusEndSessionEndpoint}>
+          <AppNav />
+          {children}
+          <SiteFooter />
+          <HelpBubble />
+        </WitusEcosystemProvider>
         {/* Vercel Web Analytics: cookieless pageview counts + Web Vitals, no consent
             surface. Complements PostHog (which owns the product-event taxonomy) rather
             than replacing it. It was previously mounted inside the home page component,

@@ -6,7 +6,14 @@ import { useState, type FormEvent } from "react";
 import { signIn } from "@/lib/auth-client";
 import { WitusSsoButton } from "@/components/witus-sso-button";
 
-export function LoginForm({ witusSsoEnabled }: { witusSsoEnabled: boolean }) {
+export function LoginForm({
+  witusSsoEnabled,
+  witusSilentCheckUrl = null,
+}: {
+  witusSsoEnabled: boolean;
+  /** Server-resolved IdP session endpoint for the silent "Continue as <name>" check. */
+  witusSilentCheckUrl?: string | null;
+}) {
   const [email, setEmail] = useState("");
   const [submitted, setSubmitted] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -108,7 +115,7 @@ export function LoginForm({ witusSsoEnabled }: { witusSsoEnabled: boolean }) {
 
             {witusSsoEnabled && (
               <div className="mt-4">
-                <WitusSsoButton />
+                <WitusSsoButton silentCheckUrl={witusSilentCheckUrl} />
               </div>
             )}
 

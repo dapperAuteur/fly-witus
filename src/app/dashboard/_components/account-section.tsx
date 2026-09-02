@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { signOut, useSession } from "@/lib/auth-client";
+import { useEndWitusSession } from "@/lib/witus-ecosystem";
 
 // Self-service account management: change email (magic-link style
 // verification), export data, sign out everywhere, and delete account.
@@ -10,6 +11,10 @@ import { signOut, useSession } from "@/lib/auth-client";
 export function AccountSection() {
   const { data: session } = useSession();
   const router = useRouter();
+  // Non-null only when this deploy is a configured ecosystem OIDC client. "Sign out
+  // everywhere" that leaves the shared WitUS session alive is the worst version of this
+  // button: the very next visit to /login would offer "Continue as <you>".
+  const endWitusSession = useEndWitusSession();
 
   const [newEmail, setNewEmail] = useState("");
   const [emailMsg, setEmailMsg] = useState<{ ok: boolean; text: string } | null>(null);
@@ -63,7 +68,10 @@ export function AccountSection() {
   };
 
   const signOutEverywhere = async () => {
-    if (!confirm("Sign out of Fly WitUS on all devices?")) return;
+    const question = endWitusSession
+      ? "Sign out of Fly WitUS on all devices? This also signs you out of every WitUS app in this browser."
+      : "Sign out of Fly WitUS on all devices?";
+    if (!confirm(question)) return;
     setSignOutBusy(true);
     setActionError(null);
     try {
@@ -73,6 +81,13 @@ export function AccountSection() {
         throw new Error(json.error ?? `Failed (HTTP ${res.status})`);
       }
       await signOut();
+      // ORDER IS THE SAFETY PROPERTY: every local session is already revoked above, so an
+      // unreachable or refusing IdP still leaves the person signed out here. Never hand off
+      // first. The handoff is a full navigation off this origin, so nothing after it runs.
+      if (endWitusSession) {
+        endWitusSession();
+        return;
+      }
       router.push("/login");
     } catch (err) {
       setActionError(err instanceof Error ? err.message : String(err));
@@ -158,7 +173,11 @@ export function AccountSection() {
             disabled={signOutBusy}
             className="px-3 py-2 border border-border rounded text-sm font-semibold hover:bg-muted disabled:opacity-50"
           >
-            {signOutBusy ? "Signing out…" : "Sign out everywhere"}
+            {signOutBusy
+              ? "Signing out…"
+              : endWitusSession
+                ? "Sign out of WitUS everywhere"
+                : "Sign out everywhere"}
           </button>
         </div>
 

@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut, useSession } from "@/lib/auth-client";
+import { useEndWitusSession } from "@/lib/witus-ecosystem";
 
 // Persistent top navigation shown on every route (rendered once in the
 // root layout). Replaces the ad-hoc per-page nav snippets that used to
@@ -29,6 +30,20 @@ export function AppNav() {
   const { data: session } = useSession();
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
+
+  // Global sign-out. Non-null only when this deploy is a configured ecosystem OIDC client;
+  // otherwise sign-out stays exactly as local as it is today and the label stays "Sign out".
+  const endWitusSession = useEndWitusSession();
+
+  // ORDER IS THE SAFETY PROPERTY: destroy the LOCAL session first, then hand off to the IdP.
+  // If the IdP is unreachable or refuses, the person is still signed out here. Handing off
+  // first would turn any IdP failure into "I clicked sign out and I'm still signed in".
+  const handleSignOut = async () => {
+    await signOut();
+    if (endWitusSession) endWitusSession();
+  };
+
+  const signOutLabel = endWitusSession ? "Sign out of WitUS" : "Sign out";
 
   // isAdmin rides the session via better-auth additionalFields. Cast
   // because the generated session type doesn't surface custom fields.
@@ -101,10 +116,10 @@ export function AppNav() {
                   {session.user.email}
                 </span>
                 <button
-                  onClick={() => signOut()}
+                  onClick={() => void handleSignOut()}
                   className="px-3 py-2 border border-border rounded-md text-sm font-semibold hover:bg-muted transition"
                 >
-                  Sign out
+                  {signOutLabel}
                 </button>
               </>
             ) : (
@@ -168,11 +183,11 @@ export function AppNav() {
               <button
                 onClick={() => {
                   close();
-                  signOut();
+                  void handleSignOut();
                 }}
                 className="w-full text-left px-3 py-2 rounded-md text-sm font-semibold hover:bg-muted"
               >
-                Sign out
+                {signOutLabel}
                 <span className="block text-xs text-muted-foreground truncate">
                   {session.user.email}
                 </span>

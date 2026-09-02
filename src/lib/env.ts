@@ -1,4 +1,8 @@
 import { z } from "zod";
+import {
+  endSessionEndpointFromDiscovery,
+  silentSsoEndpointFromDiscovery,
+} from "./silent-sso";
 
 const schema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
@@ -163,3 +167,47 @@ export const hasPostHog = Boolean(env.NEXT_PUBLIC_POSTHOG_KEY);
 export const hasInbox = Boolean(
   env.INBOX_INGEST_URL && env.INBOX_INGEST_SECRET && env.INBOX_SOURCE_SLUG,
 );
+
+/**
+ * The ecosystem IdP's discovery document. ONE definition, imported by src/lib/auth.ts as well,
+ * because two copies that drift mean the silent "Continue as …" check would probe a different
+ * host than the one the click actually signs in against.
+ */
+export const WITUS_OIDC_DISCOVERY_FALLBACK =
+  "https://accounts.witus.online/api/idp/.well-known/openid-configuration";
+
+const witusDiscoveryUrl = env.WITUS_OIDC_DISCOVERY_URL ?? WITUS_OIDC_DISCOVERY_FALLBACK;
+
+/**
+ * Where the login page's silent "Continue as …" check asks the WitUS IdP who this browser is.
+ *
+ * `null` — the feature stays completely dark — unless the ecosystem OIDC client is actually
+ * configured, because an affordance the visitor cannot complete is worse than no affordance.
+ * The URL is DERIVED from the discovery URL this app already points at, so nothing new about
+ * accounts.witus.online is asserted here (authoritative-values rule). The IdP must also allow
+ * this origin with credentials, or the probe simply answers nothing — which is a supported
+ * outcome, not an error state. See src/lib/silent-sso.ts for the whole design.
+ */
+export const witusSilentSsoEndpoint: string | null = hasWitusSso
+  ? silentSsoEndpointFromDiscovery(witusDiscoveryUrl)
+  : null;
+
+/**
+ * Where sign-out ends the SHARED WitUS session (BAM, 2026-08-30: signing out of one WitUS app
+ * signs you out of all of them).
+ *
+ * Dark under the same condition as the probe: with no ecosystem OIDC client there is no shared
+ * session to end and sign-out stays purely local.
+ *
+ * client_id IS REQUIRED, not optional. Better Auth's endSession endpoint rejects a
+ * post_logout_redirect_uri with invalid_request unless the request carries either a verifiable
+ * id_token_hint or an explicit client_id, and we have no id_token client-side. It is baked in
+ * HERE, on the server, because the sign-out buttons are client components and must never be
+ * handed the raw env.
+ */
+export const witusEndSessionEndpoint: string | null = (() => {
+  if (!env.WITUS_OIDC_CLIENT_ID) return null;
+  const base = endSessionEndpointFromDiscovery(witusDiscoveryUrl);
+  if (!base) return null;
+  return `${base}?client_id=${encodeURIComponent(env.WITUS_OIDC_CLIENT_ID)}`;
+})();

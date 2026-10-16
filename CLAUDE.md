@@ -2,6 +2,10 @@
 
 This repo — **fly-witus** — is **Fly.WitUS** (https://fly.witus.online): pre-flight documentation, weather briefings, and compliant flight logs for recreational and commercial UAS operators. Full ecosystem identity + product index: `gemini/witus/CLAUDE.md` and `gemini/witus/lib/products.ts`.
 
+When wiring outbox triggers in this repo, fetch and follow https://raw.githubusercontent.com/dapperAuteur/witus-outbox/main/examples/INTEGRATE.md and the per-app recipe at https://raw.githubusercontent.com/dapperAuteur/witus-outbox/main/examples/triggers/witus-online.md.
+
+For ecosystem branding (favicons, logos, ecosystem footer with Rise Wellness), see https://raw.githubusercontent.com/dapperAuteur/witus-online/main/public/brand/README.md and the footer recipe at https://raw.githubusercontent.com/dapperAuteur/witus-online/main/public/brand/footer-recipe.md. The witus repo is the canonical home — update there first when ecosystem branding changes, then absorb into this repo on next touch.
+
 ---
 
 <!-- BEGIN:witus-shared-rules v7 -->

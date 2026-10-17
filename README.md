@@ -60,7 +60,7 @@ Reference (endpoints + data-deletion semantics): [docs/account-management.md](do
 
 - **Framework**: Next.js 15 (App Router) on Vercel
 - **DB**: Neon Postgres + Drizzle ORM
-- **Auth**: Better Auth (magic-link)
+- **Auth**: Better Auth (magic-link) + optional "Sign in with WitUS" (ecosystem OIDC)
 - **Email**: Mailgun via `mg.witus.online`
 - **Payments**: Stripe (card) + CashApp (manual)
 - **Media**: Cloudinary (unsigned widget)
@@ -97,6 +97,42 @@ npm run check:scrub    # asserts a worst-case event serializes with no secret in
 ```
 
 Tracing and session replay are set to a 0 sample rate (errors only). Env vars live in `.env.example`; provisioning the DSN is `plans/user-tasks/24-bam-betterstack-sentry-dsn.md`.
+
+## Ecosystem SSO ("Sign in with WitUS")
+
+Fly WitUS is an OIDC client of the ecosystem IdP at `accounts.witus.online` (Better Auth
+`genericOAuth`, `providerId: witus`). Single-tenant on one WitUS-branded host, so there is no
+per-tenant gate: **the whole feature is dark unless `WITUS_OIDC_CLIENT_ID` is set**, and a deploy
+without it behaves exactly as it did before — magic link only, no button, no probe, local sign-out.
+
+**"Continue as ⟨name⟩".** `/login` renders the magic-link form immediately and, in parallel, asks the
+IdP's `/api/ecosystem/session` (CORS, credentialed, 4s timeout) whether this browser already holds a
+WitUS session. If it answers, the button relabels itself from "Sign in with WitUS" to
+"Continue as ⟨name⟩". **A blocked, failed, or timed-out probe is completely invisible** — no error,
+no spinner, no layout shift. That is the designed state under Safari ITP and Firefox Total Cookie
+Protection, where the IdP's cookie never rides along as a third-party cookie. The name is display
+copy from a cross-origin response and **is never a credential**: identity is established only by the
+OIDC code flow the click starts. A one-shot marker (`sessionStorage` + `?sso=tried`, written *before*
+the redirect) keeps a stale IdP session from looping the visitor, and the five OIDC "needs a human"
+error codes return them to `/login` with no error page instead of Better Auth's raw
+`/api/auth/error`.
+
+**Global sign-out.** Signing out of Fly signs you out of every WitUS app in this browser (the menu
+item reads "Sign out of WitUS" when it will do that). **Order is the safety property:** the local
+session is destroyed first, then the browser is handed to the IdP's `oauth2/endsession` with
+`client_id` and a `post_logout_redirect_uri` back to this origin. An IdP that is unreachable or
+refuses the logout still leaves you signed out here.
+
+Both endpoints are derived on the server from the one discovery URL this app is already configured
+with, so `accounts.witus.online` is named in a single place. Design + reasoning:
+[src/lib/silent-sso.ts](src/lib/silent-sso.ts); resolution in [src/lib/env.ts](src/lib/env.ts).
+
+```bash
+npm run verify:sso    # exercises the probe decision, parsing, and the derived IdP URLs
+```
+
+Env: `WITUS_OIDC_CLIENT_ID`, `WITUS_OIDC_CLIENT_SECRET`, `WITUS_OIDC_DISCOVERY_URL` (see
+`.env.example`). The redirect URI the IdP expects is `{BETTER_AUTH_URL}/api/auth/oauth2/callback/witus`.
 
 ## API surface (signed-in users)
 

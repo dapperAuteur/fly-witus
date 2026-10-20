@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    # No env block: src/lib/env.ts falls back to dev placeholders during the
+    # `next build` phase, so the build passes with no env vars set.
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Lint
+        run: npm run lint
+
+      # Test: this repo has no `test` script, so there is no test step.
+      # Possible follow-up: the repo has check:* and verify:* scripts
+      # (check:scrub, verify:solar, verify:flight-time, verify:weather,
+      # verify:minimums, verify:risk, verify:documents, verify:sso) that
+      # could be wired in later. They are not run here.
+
+      - name: Build
+        run: npm run build

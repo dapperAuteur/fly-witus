@@ -1,6 +1,6 @@
 /**
  * "Continue as <name>" — the silent ecosystem-SSO check, plus the derived IdP endpoints
- * global sign-out needs.
+ * "Sign out of WitUS everywhere" needs.
  *
  * THE COMPLAINT. Signing in on fly.witus.online sends you to the WitUS login page even when
  * another tab already has you signed in to a WitUS app. BAM chose OPTION B on 2026-08-30:
@@ -151,9 +151,10 @@ function splitDiscoveryUrl(
  * The IdP's RP-initiated logout endpoint: `<basePath>/oauth2/endsession`, which is the
  * `end_session_endpoint` the discovery document advertises.
  *
- * BAM chose GLOBAL sign-out on 2026-08-30: "signout signs out of every app". Ending only this
- * app's session leaves the IdP session alive, and with "Continue as …" live that means signing
- * out and coming back offers to sign you straight back in — which reads as a broken logout.
+ * Used only by the separate "Sign out of WitUS everywhere" control. The plain "Sign out" ends
+ * only this app's session (BAM, 2026-10-29, witus task 128 option (b), replacing the 2026-08-30
+ * global sign-out), so after it the IdP session is alive and "Continue as …" offering to sign
+ * you straight back in is the intended behaviour, not a broken logout.
  */
 export function endSessionEndpointFromDiscovery(
   discoveryUrl: string | null | undefined,

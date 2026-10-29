@@ -200,7 +200,7 @@ export const HELP_DOCS: HelpDoc[] = [
     title: "Managing your account",
     category: "Account",
     summary:
-      "Sign-in (magic link), changing your email, exporting your data, signing out everywhere, and deleting your account.",
+      "Sign-in (magic link), changing your email, exporting your data, signing out of Fly WitUS on all devices, and deleting your account.",
     keywords: [
       "account",
       "email",
@@ -229,10 +229,15 @@ export const HELP_DOCS: HelpDoc[] = [
         kind: "paragraph",
         text: "From Dashboard → Account, choose Export my data to download a JSON file containing your profile, missions, flights, photos, and aircraft profiles.",
       },
-      { kind: "heading", text: "Sign out everywhere" },
+      { kind: "heading", text: "Sign out of Fly WitUS on all devices" },
       {
         kind: "paragraph",
-        text: "If you signed in on a shared or lost device, use 'Sign out everywhere' in Dashboard → Account to invalidate all active sessions. You'll need a fresh magic link to sign back in.",
+        text: "If you signed in on a shared or lost device, use 'Sign out of Fly WitUS on all devices' in Dashboard → Account to end every Fly WitUS session. You'll need a fresh magic link to sign back in. Your WitUS account and other WitUS apps stay signed in.",
+      },
+      { kind: "heading", text: "Sign out vs. Sign out of WitUS everywhere" },
+      {
+        kind: "paragraph",
+        text: "Sign out in the top bar ends your Fly WitUS session on this device only; you stay signed in to WitUS. Sign out of WitUS everywhere (in the menu under your email, or under Sign out on a phone) also signs you out of WitUS on this device. Other WitUS apps you are signed in to stay signed in until you sign out of them.",
       },
       { kind: "heading", text: "Delete your account" },
       {

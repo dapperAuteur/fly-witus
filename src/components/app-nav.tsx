@@ -6,6 +6,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut, useSession } from "@/lib/auth-client";
 import { useEndWitusSession } from "@/lib/witus-ecosystem";
+import { SignOutEverywhereButton } from "@/components/sign-out-everywhere-button";
 
 // Persistent top navigation shown on every route (rendered once in the
 // root layout). Replaces the ad-hoc per-page nav snippets that used to
@@ -31,19 +32,16 @@ export function AppNav() {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
 
-  // Global sign-out. Non-null only when this deploy is a configured ecosystem OIDC client;
-  // otherwise sign-out stays exactly as local as it is today and the label stays "Sign out".
+  // "Sign out" ends ONLY Fly's session and never visits the IdP, so the WitUS session and every
+  // other WitUS app stay signed in (BAM, 2026-10-29, witus task 128 option (b)). Its label is
+  // always exactly "Sign out" (shared UI rule: the header sign-in/sign-out control is never
+  // renamed). Ending WitUS too is the separate SignOutEverywhereButton, which renders only when
+  // this deploy is a configured ecosystem OIDC client (non-null end-session URL).
   const endWitusSession = useEndWitusSession();
 
-  // ORDER IS THE SAFETY PROPERTY: destroy the LOCAL session first, then hand off to the IdP.
-  // If the IdP is unreachable or refuses, the person is still signed out here. Handing off
-  // first would turn any IdP failure into "I clicked sign out and I'm still signed in".
   const handleSignOut = async () => {
     await signOut();
-    if (endWitusSession) endWitusSession();
   };
-
-  const signOutLabel = endWitusSession ? "Sign out of WitUS" : "Sign out";
 
   // isAdmin rides the session via better-auth additionalFields. Cast
   // because the generated session type doesn't surface custom fields.
@@ -112,14 +110,28 @@ export function AppNav() {
                     Upgrade
                   </Link>
                 )}
-                <span className="text-xs text-muted-foreground max-w-[14rem] truncate hidden lg:inline">
-                  {session.user.email}
-                </span>
+                {endWitusSession ? (
+                  // The account menu: the email opens a small panel holding the secondary
+                  // "Sign out of WitUS everywhere" and its help text, which do not fit the bar.
+                  <details className="relative">
+                    <summary className="list-none cursor-pointer px-2 py-2 rounded-md text-xs text-muted-foreground hover:bg-muted max-w-[10rem] lg:max-w-[14rem] truncate">
+                      {session.user.email} <span aria-hidden="true">▾</span>
+                    </summary>
+                    <div className="absolute right-0 mt-2 w-72 rounded-md border border-border bg-card p-3 shadow-lg z-50">
+                      <SignOutEverywhereButton />
+                    </div>
+                  </details>
+                ) : (
+                  <span className="text-xs text-muted-foreground max-w-[14rem] truncate hidden lg:inline">
+                    {session.user.email}
+                  </span>
+                )}
                 <button
+                  type="button"
                   onClick={() => void handleSignOut()}
                   className="px-3 py-2 border border-border rounded-md text-sm font-semibold hover:bg-muted transition"
                 >
-                  {signOutLabel}
+                  Sign out
                 </button>
               </>
             ) : (
@@ -180,18 +192,26 @@ export function AppNav() {
           )}
           <div className="pt-2 border-t border-border mt-2">
             {session ? (
-              <button
-                onClick={() => {
-                  close();
-                  void handleSignOut();
-                }}
-                className="w-full text-left px-3 py-2 rounded-md text-sm font-semibold hover:bg-muted"
-              >
-                {signOutLabel}
-                <span className="block text-xs text-muted-foreground truncate">
+              <div className="space-y-1">
+                {/* The email sits outside the button so its accessible name is exactly "Sign out". */}
+                <p className="px-3 text-xs text-muted-foreground truncate">
                   {session.user.email}
-                </span>
-              </button>
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    close();
+                    void handleSignOut();
+                  }}
+                  className="w-full text-left px-3 py-2 rounded-md text-sm font-semibold hover:bg-muted"
+                >
+                  Sign out
+                </button>
+                <SignOutEverywhereButton
+                  onBeforeSignOut={close}
+                  className="w-full text-left px-3 py-2 rounded-md text-sm font-medium text-muted-foreground underline underline-offset-2 hover:bg-muted disabled:opacity-50"
+                />
+              </div>
             ) : (
               <Link
                 href="/login"

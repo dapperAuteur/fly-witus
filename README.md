@@ -49,7 +49,7 @@ Everything below is self-serve from **Dashboard → Account** — no need to ema
 - **Sign-in is passwordless.** Enter your email, click the magic link we send (expires in 15 min). There's no password to set or reset.
 - **Change email** — request a change and confirm via a link sent to the *new* address; your old email stays active until you click it.
 - **Export my data** — download a JSON file of your profile, missions (with flights + photos), aircraft profiles, and group memberships.
-- **Sign out everywhere** — invalidate every active session (use this on a lost/shared device); sign back in with a fresh magic link.
+- **Sign out of Fly WitUS on all devices** — invalidate every active Fly WitUS session (use this on a lost/shared device); sign back in with a fresh magic link. It does not sign you out of WitUS or other WitUS apps.
 - **Delete account** — type `DELETE` to confirm; permanently removes your account and cloud data (missions, photos, aircraft, and any groups you own). Locally-stored missions on your device are unaffected.
 
 Need help or hit a bug? Use the **help bubble** (bottom-right on any page) — works signed-in or out — or browse the searchable docs at [/help](https://fly.witus.online/help).
@@ -117,11 +117,15 @@ the redirect) keeps a stale IdP session from looping the visitor, and the five O
 error codes return them to `/login` with no error page instead of Better Auth's raw
 `/api/auth/error`.
 
-**Global sign-out.** Signing out of Fly signs you out of every WitUS app in this browser (the menu
-item reads "Sign out of WitUS" when it will do that). **Order is the safety property:** the local
-session is destroyed first, then the browser is handed to the IdP's `oauth2/endsession` with
-`client_id` and a `post_logout_redirect_uri` back to this origin. An IdP that is unreachable or
-refuses the logout still leaves you signed out here.
+**Sign out vs. Sign out of WitUS everywhere** (BAM, 2026-10-29, witus task 128 option (b)).
+**Sign out** in the nav ends only Fly's session; you stay signed in to WitUS, so the next "Sign in
+with WitUS" goes straight in. When this deploy is a configured WitUS client, the nav also offers
+**Sign out of WitUS everywhere** (desktop: in the menu under your email; mobile: under Sign out), with
+the help text "Also signs you out of WitUS. Other WitUS apps you are signed in to stay signed in
+until you sign out of them." **Order is the safety property:** the local session is destroyed
+first, then the browser is handed to the IdP's `oauth2/endsession` with `client_id` and a
+`post_logout_redirect_uri` back to this origin. An IdP that is unreachable or refuses the logout
+still leaves you signed out here.
 
 Both endpoints are derived on the server from the one discovery URL this app is already configured
 with, so `accounts.witus.online` is named in a single place. Design + reasoning:
@@ -144,7 +148,7 @@ Env: `WITUS_OIDC_CLIENT_ID`, `WITUS_OIDC_CLIENT_SECRET`, `WITUS_OIDC_DISCOVERY_U
 | POST | `/api/account/email` | Request email change (verification link to new address) |
 | GET | `/api/account/email/verify` | Apply a verified email change |
 | GET | `/api/account/export` | Download all your data as JSON |
-| DELETE | `/api/account/sessions` | Sign out everywhere |
+| DELETE | `/api/account/sessions` | Sign out of Fly WitUS on all devices |
 | DELETE | `/api/account` | Delete account + cloud data (typed confirm) |
 | GET / POST | `/api/aircraft-profiles` | List / create aircraft |
 | GET / POST | `/api/documents/credentials` | List / add pilot credentials *(flagged)* |

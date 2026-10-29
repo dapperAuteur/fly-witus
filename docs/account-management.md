@@ -32,12 +32,16 @@ sessions, data, and deletion rather than credentials.
   containing the user's profile, missions (with flights + photos), aircraft
   profiles, and group memberships.
 
-## Sign out everywhere
+## Sign out of Fly WitUS on all devices
 
-- **UI:** Dashboard → Account → "Sign out everywhere".
+- **UI:** Dashboard → Account → "Sign out of Fly WitUS on all devices", then
+  "Yes, sign out on all devices" in the inline confirm step.
 - **API:** `DELETE /api/account/sessions` → deletes every session row for the
   user (all devices), then the client signs out locally. Next sign-in needs a
   fresh magic link. Use on a lost or shared device.
+- It ends Fly WitUS sessions only. The WitUS session and other WitUS apps stay
+  signed in; to end WitUS too, use "Sign out of WitUS everywhere" in the nav
+  (BAM, 2026-10-29, witus task 128 option (b)).
 
 ## Delete account
 

@@ -1,5 +1,6 @@
-// Verification harness for src/lib/silent-sso.ts — the "Continue as <name>" check and
-// global sign-out.
+// Verification harness for src/lib/silent-sso.ts — the "Continue as <name>" check, the
+// local-only "Sign out", and the separate "Sign out of WitUS everywhere" (BAM, 2026-10-29,
+// witus task 128 option (b)).
 //
 // Run: npm run verify:sso
 //
@@ -308,7 +309,7 @@ console.log("\na failed check is invisible, and the button never builds its own 
   ok("the login page resolves the endpoint server-side", page.includes("witusSilentSsoEndpoint"));
 }
 
-console.log("\nglobal sign-out — the local session dies first");
+console.log("\nsign-out — \"Sign out\" is local; \"Sign out of WitUS everywhere\" kills local first");
 {
   const ecosystem = stripComments(read("src/lib/witus-ecosystem.tsx"));
   // The trailing slash is exact-matched by the IdP against the registered redirectUrls.
@@ -327,23 +328,60 @@ console.log("\nglobal sign-out — the local session dies first");
     stripComments(read("src/lib/env.ts")).includes("?client_id=${encodeURIComponent("),
   );
 
-  // ORDER IS THE SAFETY PROPERTY. If the IdP is unreachable the person must still be signed
-  // out here, so every call site destroys the local session BEFORE handing off.
-  for (const rel of [
-    "src/components/app-nav.tsx",
-    "src/app/dashboard/_components/account-section.tsx",
-  ]) {
-    const src = stripComments(read(rel));
-    const local = src.indexOf("await signOut();");
-    const handoff = src.indexOf("endWitusSession()");
-    ok(`${rel}: destroys the local session`, local > -1);
-    ok(`${rel}: hands off to the IdP`, handoff > -1);
-    ok(`${rel}: local sign-out happens FIRST`, local > -1 && handoff > -1 && local < handoff);
-  }
-  // Label tells the truth about scope in both states.
-  const nav = read("src/components/app-nav.tsx");
-  ok('nav says "Sign out of WitUS" when global', nav.includes('"Sign out of WitUS"'));
-  ok('nav falls back to plain "Sign out"', nav.includes('"Sign out"'));
+  // The everywhere control. ORDER IS THE SAFETY PROPERTY: if the IdP is unreachable the
+  // person must still be signed out here, so it destroys the local session BEFORE handing off.
+  const everywhere = stripComments(read("src/components/sign-out-everywhere-button.tsx"));
+  const local = everywhere.indexOf("await signOut();");
+  const handoff = everywhere.indexOf("endWitusSession();");
+  ok("everywhere: destroys the local session", local > -1);
+  ok("everywhere: hands off to the IdP", handoff > -1);
+  ok("everywhere: local sign-out happens FIRST", local > -1 && handoff > -1 && local < handoff);
+  ok(
+    "everywhere: renders nothing when the end-session URL is null",
+    everywhere.includes("if (!endWitusSession) return null;"),
+  );
+  ok(
+    'everywhere: exact name "Sign out of WitUS everywhere"',
+    everywhere.includes('SIGN_OUT_EVERYWHERE_LABEL = "Sign out of WitUS everywhere"'),
+  );
+  ok(
+    "everywhere: the exact help text",
+    everywhere.includes(
+      '"Also signs you out of WitUS. Other WitUS apps you are signed in to stay signed in until you sign out of them."',
+    ),
+  );
+  ok(
+    "everywhere: the help text is the button's aria-describedby",
+    everywhere.includes("aria-describedby={helpId}") && everywhere.includes("<p id={helpId}"),
+  );
+
+  // The nav. "Sign out" is local in every state and its name never flips.
+  const nav = stripComments(read("src/components/app-nav.tsx"));
+  ok("nav: Sign out never calls the IdP handoff", !nav.includes("endWitusSession()"));
+  ok("nav: Sign out never names the end-session URL", !nav.includes("endsession"));
+  ok('nav: no "Sign out of WitUS" label', !nav.includes('"Sign out of WitUS"'));
+  ok(
+    'nav: Sign out reads exactly "Sign out" (desktop + mobile)',
+    nav.split(/>\s*Sign out\s*</).length - 1 === 2,
+  );
+  ok(
+    "nav: the everywhere control is in the desktop and the mobile menu",
+    nav.split("<SignOutEverywhereButton").length - 1 === 2,
+  );
+
+  // The account panel's all-devices control ends Fly sessions only, under a name that does not
+  // collide with the everywhere control, and asks without window.confirm() (zero-alert rule).
+  const account = stripComments(read("src/app/dashboard/_components/account-section.tsx"));
+  ok("account: all-devices never hands off to the IdP", !account.includes("endWitusSession"));
+  ok(
+    'account: labelled "Sign out of Fly WitUS on all devices"',
+    account.includes("Sign out of Fly WitUS on all devices"),
+  );
+  ok("account: no window.confirm()", !/\bconfirm\(/.test(account));
+  ok(
+    'account: does not reuse the name "Sign out of WitUS everywhere"',
+    !account.includes("Sign out of WitUS everywhere"),
+  );
 }
 
 console.log(

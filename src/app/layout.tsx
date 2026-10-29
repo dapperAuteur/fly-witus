@@ -64,11 +64,11 @@ export default function RootLayout({
           apiKey={process.env.NEXT_PUBLIC_POSTHOG_KEY ?? null}
           apiHost="/ingest"
         />
-        {/* Global sign-out (BAM, 2026-08-30: signing out of one WitUS app signs you out of
-            all of them). The end-session URL is resolved HERE, in the Server Component, because
-            it carries the OIDC client_id and a client component must never read the raw env.
-            `null` — no ecosystem OIDC client configured — is the supported state that leaves
-            every sign-out button purely local. */}
+        {/* "Sign out of WitUS everywhere" (BAM, 2026-10-29, witus task 128 option (b); the
+            plain "Sign out" is local only). The end-session URL is resolved HERE, in the Server
+            Component, because it carries the OIDC client_id and a client component must never
+            read the raw env. `null` — no ecosystem OIDC client configured — is the supported
+            state in which the everywhere control does not render. */}
         <WitusEcosystemProvider endSessionUrl={witusEndSessionEndpoint}>
           <AppNav />
           {children}

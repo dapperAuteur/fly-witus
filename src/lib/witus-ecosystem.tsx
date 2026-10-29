@@ -13,8 +13,8 @@ import { createContext, useCallback, useContext } from "react";
  * without a chain of props through a client tree.
  *
  * `null` is the ordinary, supported state: no ecosystem OIDC client configured means there is
- * no shared session to end, so sign-out stays purely local and the button keeps its plain
- * label.
+ * no shared session to end, so the "Sign out of WitUS everywhere" control does not render.
+ * The plain "Sign out" is local in every state (BAM, 2026-10-29, witus task 128 option (b)).
  */
 const WitusEndSessionContext = createContext<string | null>(null);
 
@@ -32,22 +32,24 @@ export function WitusEcosystemProvider({
   );
 }
 
-/** The IdP end-session URL, or null when global sign-out is not available. */
+/** The IdP end-session URL, or null when "Sign out of WitUS everywhere" is not available. */
 export function useWitusEndSession(): string | null {
   return useContext(WitusEndSessionContext);
 }
 
 /**
- * Hand off to the IdP to end the SHARED WitUS session (BAM, 2026-08-30: "signout signs out of
- * every app").
+ * Hand off to the IdP to end the SHARED WitUS session. Used ONLY by the separate "Sign out of
+ * WitUS everywhere" control (src/components/sign-out-everywhere-button.tsx); the plain "Sign out"
+ * never calls it (BAM, 2026-10-29, witus task 128 option (b)). Other WitUS apps keep their own
+ * sessions until the person signs out of them.
  *
  * CALL THIS ONLY AFTER THE LOCAL SESSION IS ALREADY DESTROYED. Order is the safety property:
  * if the IdP is unreachable, refuses, or the redirect never completes, the person is still
  * signed out here. Handing off first turns any IdP failure into "I clicked sign out and I'm
  * still signed in".
  *
- * Returns a `go` that is null when there is nothing to hand off to, so callers can branch on
- * it for both the label and the fallback path.
+ * Returns a `go` that is null when there is nothing to hand off to, so the control can render
+ * nothing in that state.
  */
 export function useEndWitusSession(): (() => void) | null {
   const endSessionUrl = useWitusEndSession();

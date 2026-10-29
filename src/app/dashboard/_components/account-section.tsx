@@ -3,19 +3,13 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { signOut, useSession } from "@/lib/auth-client";
-import { useEndWitusSession } from "@/lib/witus-ecosystem";
 
 // Self-service account management: change email (magic-link style
-// verification), export data, sign out everywhere, and delete account.
+// verification), export data, sign out of Fly WitUS on all devices, and delete account.
 // Login is passwordless, so there's no password to manage here.
 export function AccountSection() {
   const { data: session } = useSession();
   const router = useRouter();
-  // Non-null only when this deploy is a configured ecosystem OIDC client. "Sign out
-  // everywhere" that leaves the shared WitUS session alive is the worst version of this
-  // button: the very next visit to /login would offer "Continue as <you>".
-  const endWitusSession = useEndWitusSession();
-
   const [newEmail, setNewEmail] = useState("");
   const [emailMsg, setEmailMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [emailBusy, setEmailBusy] = useState(false);
@@ -24,6 +18,8 @@ export function AccountSection() {
   const [deleteBusy, setDeleteBusy] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const [signOutBusy, setSignOutBusy] = useState(false);
+  // Inline confirm step for the all-devices sign-out (zero-alert rule: no window.confirm()).
+  const [confirmAllDevices, setConfirmAllDevices] = useState(false);
 
   // Surface the result of the email-change verification redirect
   // (/dashboard?email=changed|taken|invalid|error).
@@ -67,11 +63,11 @@ export function AccountSection() {
     }
   };
 
-  const signOutEverywhere = async () => {
-    const question = endWitusSession
-      ? "Sign out of Fly WitUS on all devices? This also signs you out of every WitUS app in this browser."
-      : "Sign out of Fly WitUS on all devices?";
-    if (!confirm(question)) return;
+  // Ends every FLY session (every device), not the WitUS session: BAM, 2026-10-29, witus task
+  // 128 option (b). Ending WitUS is the nav's separate "Sign out of WitUS everywhere"; this
+  // control's name must not collide with it.
+  const signOutAllDevices = async () => {
+    setConfirmAllDevices(false);
     setSignOutBusy(true);
     setActionError(null);
     try {
@@ -81,13 +77,6 @@ export function AccountSection() {
         throw new Error(json.error ?? `Failed (HTTP ${res.status})`);
       }
       await signOut();
-      // ORDER IS THE SAFETY PROPERTY: every local session is already revoked above, so an
-      // unreachable or refusing IdP still leaves the person signed out here. Never hand off
-      // first. The handoff is a full navigation off this origin, so nothing after it runs.
-      if (endWitusSession) {
-        endWitusSession();
-        return;
-      }
       router.push("/login");
     } catch (err) {
       setActionError(err instanceof Error ? err.message : String(err));
@@ -160,7 +149,7 @@ export function AccountSection() {
 
         <hr className="border-border" />
 
-        {/* Export + sign out everywhere */}
+        {/* Export + sign out of Fly WitUS on all devices */}
         <div className="flex flex-wrap gap-2">
           <a
             href="/api/account/export"
@@ -168,18 +157,45 @@ export function AccountSection() {
           >
             Export my data (JSON)
           </a>
-          <button
-            onClick={signOutEverywhere}
-            disabled={signOutBusy}
-            className="px-3 py-2 border border-border rounded text-sm font-semibold hover:bg-muted disabled:opacity-50"
-          >
-            {signOutBusy
-              ? "Signing out…"
-              : endWitusSession
-                ? "Sign out of WitUS everywhere"
-                : "Sign out everywhere"}
-          </button>
+          {!confirmAllDevices && (
+            <button
+              type="button"
+              onClick={() => setConfirmAllDevices(true)}
+              disabled={signOutBusy}
+              className="px-3 py-2 border border-border rounded text-sm font-semibold hover:bg-muted disabled:opacity-50"
+            >
+              {signOutBusy ? "Signing out…" : "Sign out of Fly WitUS on all devices"}
+            </button>
+          )}
         </div>
+        {confirmAllDevices && (
+          <div
+            role="group"
+            aria-labelledby="confirm-all-devices-text"
+            className="space-y-2 bg-muted border border-border rounded-lg p-3"
+          >
+            <p id="confirm-all-devices-text" className="text-sm">
+              Sign out of Fly WitUS on all devices? Every device you use Fly WitUS on will need
+              a fresh sign-in. Your WitUS account and other WitUS apps stay signed in.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => void signOutAllDevices()}
+                className="px-3 py-2 bg-sky-600 text-white rounded text-sm font-semibold hover:bg-sky-700"
+              >
+                Yes, sign out on all devices
+              </button>
+              <button
+                type="button"
+                onClick={() => setConfirmAllDevices(false)}
+                className="px-3 py-2 border border-border rounded text-sm font-semibold hover:bg-card"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
 
         <hr className="border-border" />
 

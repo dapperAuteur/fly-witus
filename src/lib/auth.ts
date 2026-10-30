@@ -70,6 +70,12 @@ export const auth = betterAuth({
                 clientSecret: env.WITUS_OIDC_CLIENT_SECRET ?? "",
                 scopes: ["openid", "email", "profile"],
                 pkce: true,
+                // The IdP registers /api/auth/oauth2/callback/witus (the ecosystem-wide
+                // better-auth 1.6 path, exact-match validated). better-auth 1.7 serves the
+                // callback at the core /api/auth/callback/:id, so the authorize/token
+                // redirect_uri is pinned to the registered form and the catch-all route
+                // 307s it to the core handler. Same shim as vogoat.
+                redirectURI: new URL("/api/auth/oauth2/callback/witus", env.BETTER_AUTH_URL).toString(),
               },
             ],
           }),

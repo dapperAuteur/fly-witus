@@ -22,10 +22,21 @@ const handlers = toNextJsHandler(auth);
  * unchanged.
  */
 export async function GET(request: Request): Promise<Response> {
-  const recovery = silentSsoRecoveryPath(new URL(request.url));
+  const url = new URL(request.url);
+  const recovery = silentSsoRecoveryPath(url);
   if (recovery) {
     // Relative Location: the browser resolves it against whichever origin it arrived on.
     return new Response(null, { status: 302, headers: { location: recovery } });
+  }
+  // better-auth 1.7 compatibility shim. The IdP still sends the browser to the registered
+  // /api/auth/oauth2/callback/witus (see redirectURI in src/lib/auth.ts), but 1.7 handles OAuth
+  // callbacks only at /api/auth/callback/:id. Forward code/state intact.
+  const legacyCallback = /^\/api\/auth\/oauth2\/callback\/([^/]+)\/?$/.exec(url.pathname);
+  if (legacyCallback) {
+    return new Response(null, {
+      status: 307,
+      headers: { location: `/api/auth/callback/${legacyCallback[1]}${url.search}` },
+    });
   }
   return handlers.GET(request);
 }

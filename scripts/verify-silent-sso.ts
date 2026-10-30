@@ -95,7 +95,7 @@ console.log("\nthe redirect loop — simulating an IdP that will not sign the vi
 
   // 3. The IdP declines. This is what comes back to our callback.
   const declined = new URL(
-    "https://fly.witus.online/api/auth/callback/witus?error=login_required&error_description=Authentication+required",
+    "https://fly.witus.online/api/auth/oauth2/callback/witus?error=login_required&error_description=Authentication+required",
   );
   const recovery = silentSsoRecoveryPath(declined);
   expect("3. a decline recovers to the login form", recovery, "/login?sso=tried");
@@ -138,7 +138,7 @@ for (const code of SILENT_AUTH_FAILURES) {
   expect(
     `${code} recovers`,
     silentSsoRecoveryPath(
-      new URL(`https://fly.witus.online/api/auth/callback/witus?error=${code}`),
+      new URL(`https://fly.witus.online/api/auth/oauth2/callback/witus?error=${code}`),
     ),
     "/login?sso=tried",
   );
@@ -147,7 +147,7 @@ for (const code of SILENT_AUTH_FAILURES) {
 expect(
   "server_error is left to Better Auth",
   silentSsoRecoveryPath(
-    new URL("https://fly.witus.online/api/auth/callback/witus?error=server_error"),
+    new URL("https://fly.witus.online/api/auth/oauth2/callback/witus?error=server_error"),
   ),
   null,
 );
@@ -155,7 +155,7 @@ expect(
 expect(
   "a successful callback is untouched",
   silentSsoRecoveryPath(
-    new URL("https://fly.witus.online/api/auth/callback/witus?code=abc&state=xyz"),
+    new URL("https://fly.witus.online/api/auth/oauth2/callback/witus?code=abc&state=xyz"),
   ),
   null,
 );
@@ -173,7 +173,7 @@ expect(
 expect(
   "another provider's callback is untouched",
   silentSsoRecoveryPath(
-    new URL("https://fly.witus.online/api/auth/callback/other?error=login_required"),
+    new URL("https://fly.witus.online/api/auth/oauth2/callback/other?error=login_required"),
   ),
   null,
 );

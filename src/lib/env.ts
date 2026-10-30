@@ -20,7 +20,7 @@ const schema = z.object({
   // "Sign in with WitUS" — ecosystem OIDC client against the accounts.witus.online
   // IdP. Optional: the SSO provider + button stay off until CLIENT_ID is set, so a
   // missing value never breaks the build or the magic-link flow. The redirect URI
-  // the IdP expects: {BETTER_AUTH_URL}/api/auth/oauth2/callback/witus.
+  // the IdP expects: {BETTER_AUTH_URL}/api/auth/callback/witus.
   WITUS_OIDC_CLIENT_ID: z.string().optional(),
   WITUS_OIDC_CLIENT_SECRET: z.string().optional(),
   WITUS_OIDC_DISCOVERY_URL: z.string().url().optional(),

@@ -96,9 +96,11 @@ export function WitusSsoButton({
     // always work.
     writeAttempted();
     const origin = window.location.origin;
+    // better-auth 1.7: Generic OAuth runs on the social-provider path, so this is
+    // signIn.social({ provider }) (was signIn.oauth2({ providerId }) on 1.6).
     void authClient.signIn
-      .oauth2({
-        providerId: "witus",
+      .social({
+        provider: "witus",
         callbackURL: `${origin}/`,
         // Belt and braces with the callback interceptor in src/app/api/auth/[...all]/route.ts.
         // Better Auth only reads errorCallbackURL for failures AFTER it parses the OAuth state,

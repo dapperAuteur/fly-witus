@@ -136,7 +136,7 @@ npm run verify:sso    # exercises the probe decision, parsing, and the derived I
 ```
 
 Env: `WITUS_OIDC_CLIENT_ID`, `WITUS_OIDC_CLIENT_SECRET`, `WITUS_OIDC_DISCOVERY_URL` (see
-`.env.example`). The redirect URI the IdP expects is `{BETTER_AUTH_URL}/api/auth/oauth2/callback/witus`.
+`.env.example`). The redirect URI the IdP expects is `{BETTER_AUTH_URL}/api/auth/callback/witus`.
 
 ## API surface (signed-in users)
 

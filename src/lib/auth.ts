@@ -76,6 +76,14 @@ export const auth = betterAuth({
                 // redirect_uri is pinned to the registered form and the catch-all route
                 // 307s it to the core handler. Same shim as vogoat.
                 redirectURI: new URL("/api/auth/oauth2/callback/witus", env.BETTER_AUTH_URL).toString(),
+                // "Sign out" ends ONLY Fly's session (witus task 128 option (b)). better-auth 1.7
+                // made RP-initiated logout the default: without this flag, signOut() answers with
+                // the IdP's end_session_endpoint + id_token_hint and the client follows it, which
+                // strands the person on accounts.witus.online and kills the shared WitUS session.
+                // "Sign out of WitUS everywhere" does its own handoff (signOut(), then
+                // useEndWitusSession() with client_id + post_logout_redirect_uri), so it never
+                // relied on this. Pinned by scripts/verify-sign-out-local.ts.
+                disableProviderLogout: true,
               },
             ],
           }),

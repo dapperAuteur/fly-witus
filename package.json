@@ -37,7 +37,7 @@
     "next": "15.5.28",
     "next-cloudinary": "^6.16.0",
     "pg": "^8.20.0",
-    "posthog-js": "^1.418.1",
+    "posthog-js": "^1.445.1",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "serwist": "^9.5.10",

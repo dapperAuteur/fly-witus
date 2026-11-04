@@ -42,7 +42,7 @@
     "react-dom": "19.1.0",
     "serwist": "^9.5.10",
     "stripe": "^22.1.0",
-    "zod": "^4.4.1"
+    "zod": "^4.6.6"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

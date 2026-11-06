@@ -37,6 +37,12 @@ export default function GlobalError({
           <p className="text-sm text-muted-foreground mt-2">
             Something went wrong loading the app. Try again, or reload the page.
           </p>
+          {/* The root layout and its header failed, so this minimal shell carries its own links. */}
+          <p style={{ margin: "12px 0", fontSize: 14 }}>
+            <a href="/login" style={{ color: "inherit" }}>
+              Sign in
+            </a>
+          </p>
           {error.digest && (
             <p className="text-xs text-muted-foreground mt-2">
               Reference: {error.digest}
